@@ -1,7 +1,12 @@
 package main
 
 // import rl "vendor:raylib"
+import nvg "vendor:nanovg"
+import fts "vendor:fontstash"
+import nvggl "vendor:nanovg/gl"
 import sdl "vendor:sdl2"
+import gl "vendor:OpenGL"
+import sttf "vendor:sdl2/ttf"
 import "core:strings"
 import "core:c"
 import "core:math"
@@ -18,8 +23,23 @@ edit_mode : bool
 
 main :: proc() {
     sdl.Init(sdl.INIT_VIDEO)
-    wnd := sdl.CreateWindow("topo", 60,10, 600,800, sdl.WindowFlags{.RESIZABLE})
-    renderer := sdl.CreateRenderer(wnd, -1, sdl.RENDERER_ACCELERATED)
+    sdl.GL_SetAttribute(.CONTEXT_MAJOR_VERSION, 3);
+    sdl.GL_SetAttribute(.CONTEXT_MINOR_VERSION, 3);
+    sdl.GL_SetAttribute(.CONTEXT_PROFILE_MASK, auto_cast sdl.GLprofile.COMPATIBILITY);
+    wnd := sdl.CreateWindow("topo", 60,10, 600,800, sdl.WindowFlags{.RESIZABLE, .OPENGL})
+
+    gl_context := sdl.GL_CreateContext(wnd)
+    assert(gl_context != nil, fmt.tprintf("Failed to create GLContext for window, because: {}.\n", sdl.GetError()))
+
+    sdl.GL_MakeCurrent(wnd, gl_context)
+    gl.load_up_to(3, 3, sdl.gl_set_proc_address)
+
+    vg := nvggl.Create(nvggl.CreateFlags{.ANTI_ALIAS, .STENCIL_STROKES, .DEBUG})
+    defer nvggl.Destroy(vg)
+
+    victor_regular := nvg.CreateFont(vg, "victor-regular", "./victor-regular.ttf")
+    unifont := nvg.CreateFont(vg, "unifont", "./unifont.ttf")
+    nvg.AddFallbackFontId(vg, victor_regular, unifont)
 
     quit : bool
     event : sdl.Event
@@ -39,38 +59,50 @@ main :: proc() {
                     append(&records, Record{fmt.caprintf("Hello, Dove! -{}", len(records))})
                 }
             }
-
         }
-        sdl.SetRenderDrawColor(renderer, 200, 20,20, 255)
-        sdl.RenderClear(renderer)
-        draw(renderer)
+        
+        gl.Clear(gl.COLOR_BUFFER_BIT)
+        w,h : c.int
+        sdl.GetWindowSize(wnd, &w,&h)
+        nvg.BeginFrame(vg, auto_cast w,auto_cast h, 1.0)
+        nvg.Save(vg)
 
-        sdl.RenderPresent(renderer)
+        draw(vg)
+
+        // nvg.FillColor(vg, {.2,.8,.2, 1.0})
+
+        nvg.Restore(vg)
+        nvg.EndFrame(vg)
+        sdl.GL_SwapWindow(wnd)
     }
 
     sdl.DestroyWindow(wnd)
     sdl.Quit()
 }
 
-draw :: proc(renderer: ^sdl.Renderer) {
+draw :: proc(vg : ^nvg.Context) {
     xpos :c.int= 10
     ypos :c.int= 30
     font_size :c.int= 24
-    line_height :c.int= 30
+    line_height :c.int= 34
 
-    rect : sdl.Rect
-    rect.x = xpos
-    rect.y = ypos
-    rect.w = 60
-    rect.h = 24
+    nvg.FontSize(vg, 28)
     for &r, idx in records {
-        rect.y = ypos
         if cursor != idx {
-            sdl.SetRenderDrawColor(renderer, 198, 240, 20, 200)
-            sdl.RenderDrawRect(renderer, &rect)
+            nvg.FillColor(vg, {0.8,0.8,0.8,1.0})
+            nvg.Text(vg, auto_cast xpos, auto_cast ypos, auto_cast r.text)
         } else {
-            sdl.SetRenderDrawColor(renderer, 10, 20, 128, 200)
-            sdl.RenderDrawRect(renderer, &rect)
+            {
+                nvg.BeginPath(vg)
+                nvg.FillColor(vg, {0.4,0.4,0.4,1.0})
+                nvg.Rect(vg, auto_cast (xpos-5), auto_cast (ypos)-24, 300, 30)
+                nvg.Fill(vg)
+            }
+            nvg.FillColor(vg, {0.9,0.1,1.0,1.0})
+            nvg.Text(vg, auto_cast xpos+1, auto_cast ypos+1, auto_cast r.text)
+            nvg.FillColor(vg, {1.0,1.0,1.0,1.0})
+            length := nvg.Text(vg, auto_cast xpos, auto_cast ypos, auto_cast r.text)
+
         }
         ypos += line_height
     }
