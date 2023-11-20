@@ -45,6 +45,7 @@ main :: proc() {
     gl_context := sdl.GL_CreateContext(wnd)
     assert(gl_context != nil, fmt.tprintf("Failed to create GLContext for window, because: {}.\n", sdl.GetError()))
 
+    sdl.GL_SetSwapInterval(1)
     sdl.GL_MakeCurrent(wnd, gl_context)
     gl.load_up_to(3, 3, sdl.gl_set_proc_address)
 
@@ -105,8 +106,9 @@ main :: proc() {
 
             nvg.Restore(vg)
             nvg.EndFrame(vg)
-            sdl.GL_SwapWindow(wnd)
             redraw_flag = false
+            fmt.printf("redraw\n")
+            sdl.GL_SwapWindow(wnd)
         }
     }
 
