@@ -9,7 +9,7 @@ import "core:runtime"
 // NOTE:
 // Do not keep the ^Tween, it's not stable.
 // TODO:
-// Cancel token or immediately complete with a TweenHandle design.
+//  Cancel token or immediately complete with a TweenHandle design.
 // Exp:
 // handle := tween(&value, 1.0, 0.5).get_handle()
 // // Some place in the code.

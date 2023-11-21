@@ -11,6 +11,7 @@ import "core:fmt"
 Application :: struct {
     using app_base : ApplicationBase,
     tweener : Tweener,
+    canvas : Canvas,
 }
 
 ApplicationBase :: struct {

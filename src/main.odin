@@ -23,10 +23,7 @@ edit_mode : bool
 
 redraw_flag : bool = true
 
-app_time : f64
 delta_time : f64
-
-tweener : Tweener
 
 timer : time.Stopwatch
 
@@ -52,6 +49,11 @@ main :: proc() {
     tween_system_init()
     tweener_init(&tweener, 16); defer tweener_release(&tweener)
 
+    canvas_init(vg, &app.canvas, 320,320, {200, 80, 10, 255})
+    defer canvas_release(vg, &app.canvas)
+
+    immediate_init(); defer immediate_release()
+
     quit : bool
     event : sdl.Event
     for !quit {
@@ -60,8 +62,10 @@ main :: proc() {
             case .QUIT: 
                 quit=true
                 continue
+            case .WINDOWEVENT:
+                redraw_flag = true
             case .KEYDOWN:   
-                fmt.printf("key down: {}\n", event.key.keysym)
+                // fmt.printf("key down: {}\n", event.key.keysym)
                 if event.key.keysym.sym == .j {
                     cursor = math.min(cursor + 1, len(records)-1)
                     tween(&tweener, &the_ypos, auto_cast (30+cursor*34), 0.12)->set_easing(ease_outcirc)
@@ -89,15 +93,22 @@ main :: proc() {
             gl.Clear(gl.COLOR_BUFFER_BIT)
             w,h : c.int
             sdl.GetWindowSize(wnd, &w,&h)
+            gl.Viewport(0,0,w,h)
+
+            immediate_begin({0,0,w,h})
+            immediate_quad({80,90}, {100, 300}, {0.2, 0.9, 0.8, 1.0})
+            immediate_end()
+            
             nvg.BeginFrame(vg, auto_cast w,auto_cast h, 1.0)
             nvg.Save(vg)
             
-            nvg.BeginPath(vg)
-            nvg.Circle(vg, 150,150, 300)
-            nvg.FillPaint(vg, nvg.ImagePattern(0,0, 600, 200, 0, pic, 1.0))
-            nvg.Fill(vg)
+            // nvg.BeginPath(vg)
+            // nvg.Circle(vg, 150,150, 300)
+            // nvg.FillPaint(vg, nvg.ImagePattern(0,0, 600, 200, 0, pic, 1.0))
+            // nvg.Fill(vg)
 
             draw(vg, &pic)
+            draw_canvas(vg, app.canvas, 30,30, 1.0)
 
             nvg.BeginPath(vg)
             nvg.FillColor(vg, {.8,.6,0,0.9})
@@ -143,5 +154,11 @@ draw :: proc(vg : ^nvg.Context, bg: ^int) {
     }
 
     nvg.BeginPath(vg)
-    
+}
+
+draw_canvas :: proc(vg: ^nvg.Context, canvas: Canvas, posx, posy: f32, scale: f32) {
+    nvg.BeginPath(vg)
+    nvg.Rect(vg, posx,posy, auto_cast canvas.width, auto_cast canvas.height)
+    nvg.FillPaint(vg, nvg.ImagePattern(posx,posy, auto_cast canvas.width, auto_cast canvas.height, 0, auto_cast canvas.imgid, 1))
+    nvg.Fill(vg)
 }
