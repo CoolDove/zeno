@@ -40,7 +40,7 @@ main :: proc() {
     pic := nvg.CreateImage(vg, "./p1113.png", nvg.ImageFlags{.REPEAT_X, .REPEAT_Y})
     defer nvg.DeleteImage(vg, pic)
 
-    // canvas_init(&app.canvas, 320,320, Color32{200, 80, 10, 255})
+    // canvas_init(&app.canvas, 20,20, Color32{200, 80, 10, 255})
     canvas_init(&app.canvas, "./p1113.png")
     defer canvas_release(&app.canvas)
 
@@ -49,6 +49,9 @@ main :: proc() {
     quit : bool
     event : sdl.Event
     for !quit {
+        // state machine
+        @static dragging := false
+
         if sdl.PollEvent(&event) {
             #partial switch event.type {
             case .QUIT: 
@@ -72,6 +75,24 @@ main :: proc() {
                     append(&records, Record{fmt.caprintf("Hello, Dove! 你好鸽子 -{}", len(records))})
                 }
                 redraw_flag = true
+            case .MOUSEWHEEL:
+                // fmt.printf("{}\n", event.wheel)
+                canvas.scale = math.clamp(canvas.scale + 0.1 * cast(f32)event.wheel.y * canvas.scale, 0.01, 5.0)
+                redraw_flag = true
+            case .MOUSEBUTTONDOWN:
+                if event.button.button == sdl.BUTTON_RIGHT {
+                    dragging = true
+                }
+            case .MOUSEBUTTONUP:
+                if event.button.button == sdl.BUTTON_RIGHT {
+                    dragging = false
+                }
+            case .MOUSEMOTION:
+                if dragging {
+                    relative :Vec2i= {event.motion.xrel, event.motion.yrel}
+                    app.canvas.offset += vec_i2f(relative)
+                    redraw_flag = true
+                }
             }
         }
 
@@ -103,7 +124,17 @@ draw :: proc(vg : ^nvg.Context) {
     canvas := &app.canvas
     w, h := app.window_size.x,app.window_size.y
     immediate_begin({0,0,w,h})
-    immediate_texture({10,10}, vec_i2f(Vec2i{canvas.width, canvas.height}), {1,1,1,1}, canvas.texid)
+    {
+        hw :f32= 0.5 * cast(f32)w
+        hh :f32= 0.5 * cast(f32)h
+        x := hw - 0.5 * canvas.scale * cast(f32)canvas.width
+        y := hh - 0.5 * canvas.scale * cast(f32)canvas.height
+        immediate_texture(
+            {x,y}+canvas.offset,
+            Vec2{cast(f32)canvas.width*canvas.scale, cast(f32)canvas.height*canvas.scale}, 
+            {1,1,1,1}, 
+            canvas.texid)
+    }
     immediate_end()
     
     nvg.BeginFrame(vg, auto_cast w,auto_cast h, 1.0)
@@ -116,6 +147,7 @@ draw :: proc(vg : ^nvg.Context) {
     nvg.FillColor(vg, {.8,.6,0,0.9})
     nvg.FontSize(vg, 24)
     nvg.Text(vg, 5,25, fmt.tprintf("FID: {}", app.frame_id))
+    nvg.Text(vg, 5,25+34, fmt.tprintf("scale: {}", app.canvas.scale))
     
     nvg.Restore(vg)
     nvg.EndFrame(vg)

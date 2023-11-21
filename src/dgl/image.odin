@@ -24,7 +24,6 @@ Color_RGBA :: distinct [4]byte
 
 image_load :: proc (path: string) -> Image {
     width, height, channels : libc.int
-    // image.set_flip_vertically_on_load(1)
     data := image.load(strings.clone_to_cstring(path, context.temp_allocator), 
         &width, &height, &channels, 4)
 
@@ -37,8 +36,6 @@ image_load :: proc (path: string) -> Image {
 
 image_from_mem :: proc(data: []byte) -> Image {
     width, height, channels : libc.int
-    // image.set_flip_vertically_on_load(1)
-
     data_ := image.load_from_memory(raw_data(data), cast(i32)len(data), &width, &height, &channels, 4)
     if data_ == nil {
         log.errorf("Texture: Failed to load image from memory: {}", data)

@@ -25,6 +25,8 @@ canvas_init_with_file :: proc(canvas: ^Canvas, filename: string) -> bool {
     canvas.width = tex.size.x
     canvas.height = tex.size.y
     canvas.texid = tex.id
+
+    canvas.scale = 1
     return true
 }
 
