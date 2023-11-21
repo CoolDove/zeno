@@ -20,7 +20,7 @@ Texture :: struct {
     id : u32, 
 }
 
-Color_RGBA :: distinct [4]byte
+Color32 :: distinct [4]u8
 
 image_load :: proc (path: string) -> Image {
     width, height, channels : libc.int

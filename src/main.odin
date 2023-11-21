@@ -77,37 +77,31 @@ main :: proc() {
                 redraw_flag = true
             case .MOUSEWHEEL:
                 // fmt.printf("{}\n", event.wheel)
-                canvas.scale = math.clamp(canvas.scale + 0.1 * cast(f32)event.wheel.y * canvas.scale, 0.01, 5.0)
+                if (sdl.GetModState() & sdl.KMOD_LSHIFT) == {} {
+                    canvas.scale = math.clamp(canvas.scale + 0.1 * cast(f32)event.wheel.y * canvas.scale, 0.01, 5.0)
+                } else {
+                    app.brush_size = math.clamp(event.wheel.y * 2 + app.brush_size, 1, 500)
+                }
                 redraw_flag = true
             case .MOUSEBUTTONDOWN:
                 if event.button.button == sdl.BUTTON_RIGHT {
                     dragging = true
+                    cursor_set(.Dragger)
                 }
             case .MOUSEBUTTONUP:
                 if event.button.button == sdl.BUTTON_RIGHT {
                     dragging = false
+                    cursor_set(.Default)
                 }
             case .MOUSEMOTION:
                 if dragging {
                     relative :Vec2i= {event.motion.xrel, event.motion.yrel}
                     app.canvas.offset += vec_i2f(relative)
-                    redraw_flag = true
                 }
+                redraw_flag = true
             }
         }
 
-        {// Update control
-            update_ms := time.duration_milliseconds(time.stopwatch_duration(app.timer))
-            delay :int= 1000/60 - auto_cast update_ms
-            if delay >= 0 {
-                sdl.Delay(cast(u32)delay)
-            }
-            if tweener_count(&tweener) > 0 {
-                redraw_flag = true
-            }
-            tweener_update(&tweener, 0.016)
-            time.stopwatch_reset(&timer)
-        }
         if redraw_flag {
             gl.ClearColor(0.2,0.2,0.2,1.0)
             gl.Clear(gl.COLOR_BUFFER_BIT)
@@ -118,6 +112,19 @@ main :: proc() {
             sdl.GL_SwapWindow(wnd)
         }
 
+        {// Update control
+            update_ms := time.duration_milliseconds(time.stopwatch_duration(app.timer))
+            FPS := 60
+            delay :int= 1000/FPS - auto_cast update_ms
+            if delay >= 0 {
+                sdl.Delay(cast(u32)delay)
+            }
+            if tweener_count(&tweener) > 0 {
+                redraw_flag = true
+            }
+            tweener_update(&tweener, 1000.0/cast(f32)FPS)
+            time.stopwatch_reset(&timer)
+        }
     }
 }
 
@@ -135,8 +142,7 @@ draw :: proc(vg : ^nvg.Context) {
         immediate_quad(
             {x,y}+canvas.offset+{5,5},
             Vec2{cw, ch}, 
-            {0.1,0.1,0.1,0.9}
-        )
+            {0.1,0.1,0.1,0.9})
         immediate_texture(
             {x,y}+canvas.offset,
             Vec2{cw, ch}, 
@@ -149,13 +155,15 @@ draw :: proc(vg : ^nvg.Context) {
     nvg.Save(vg)
     
     draw_nvg_records(vg)
+    draw_nvg_cursor(vg)
     // draw_canvas(vg, app.canvas, 30,30, 1.0)
 
     nvg.BeginPath(vg)
     nvg.FillColor(vg, {.8,.6,0,0.9})
     nvg.FontSize(vg, 24)
     nvg.Text(vg, 5,25, fmt.tprintf("FID: {}", app.frame_id))
-    nvg.Text(vg, 5,25+34, fmt.tprintf("scale: {}", app.canvas.scale))
+    nvg.Text(vg, 5,25+30, fmt.tprintf("scale: {}", app.canvas.scale))
+    nvg.Text(vg, 5,25+30+30, fmt.tprintf("brush size: {}", app.brush_size))
     
     nvg.Restore(vg)
     nvg.EndFrame(vg)
@@ -191,4 +199,15 @@ draw_nvg_records :: proc(vg : ^nvg.Context) {
     }
 
     nvg.BeginPath(vg)
+}
+
+draw_nvg_cursor :: proc(vg: ^nvg.Context) {
+    x,y : c.int
+    mouse_buttons := sdl.GetMouseState(&x,&y)
+
+    nvg.BeginPath(vg)
+    nvg.StrokeWidth(vg, 1)
+    nvg.StrokeColor(vg, {0,0,0,1})
+    nvg.Circle(vg, auto_cast x, auto_cast y, cast(f32)app.brush_size * app.canvas.scale)
+    nvg.Stroke(vg)
 }
