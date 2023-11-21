@@ -1,6 +1,5 @@
 package main
 
-// import rl "vendor:raylib"
 import nvg "vendor:nanovg"
 import fts "vendor:fontstash"
 import nvggl "vendor:nanovg/gl"
@@ -38,16 +37,8 @@ main :: proc() {
     defer application_release(&app)
     using app
 
-    victor_regular := nvg.CreateFont(vg, "victor-regular", "./victor-regular.ttf")
-    unifont := nvg.CreateFont(vg, "unifont", "./unifont.ttf")
-    nvg.AddFallbackFontId(vg, victor_regular, unifont)
-
     pic := nvg.CreateImage(vg, "./p1113.png", nvg.ImageFlags{.REPEAT_X, .REPEAT_Y})
     defer nvg.DeleteImage(vg, pic)
-
-    time.stopwatch_start(&timer)
-    tween_system_init()
-    tweener_init(&tweener, 16); defer tweener_release(&tweener)
 
     // canvas_init(&app.canvas, 320,320, Color32{200, 80, 10, 255})
     canvas_init(&app.canvas, "./p1113.png")
@@ -57,8 +48,6 @@ main :: proc() {
 
     quit : bool
     event : sdl.Event
-    update_timer : time.Stopwatch
-    time.stopwatch_start(&update_timer); defer time.stopwatch_stop(&update_timer)
     for !quit {
         if sdl.PollEvent(&event) {
             #partial switch event.type {
@@ -67,6 +56,11 @@ main :: proc() {
                 continue
             case .WINDOWEVENT:
                 redraw_flag = true
+                // TODO: in resize event
+                w,h : c.int
+                sdl.GetWindowSize(wnd, &w,&h)
+                app.window_size.x = w
+                app.window_size.y = h
             case .KEYDOWN:   
                 if event.key.keysym.sym == .j {
                     cursor = math.min(cursor + 1, len(records)-1)
@@ -80,57 +74,55 @@ main :: proc() {
                 redraw_flag = true
             }
         }
-        if time.duration_seconds(time.stopwatch_duration(timer)) >= 0.016 {
+
+        if redraw_flag {
+            gl.Clear(gl.COLOR_BUFFER_BIT)
+            gl.Viewport(0,0,app.window_size.x,app.window_size.y)
+            draw(vg)
+            redraw_flag = false
+            app.frame_id += 1
+            sdl.GL_SwapWindow(wnd)
+        }
+
+        {// Update control
+            update_ms := time.duration_milliseconds(time.stopwatch_duration(app.timer))
+            delay :int= 1000/60 - auto_cast update_ms
+            if delay >= 0 {
+                sdl.Delay(cast(u32)delay)
+            }
             if tweener_count(&tweener) > 0 {
                 redraw_flag = true
             }
             tweener_update(&tweener, 0.016)
             time.stopwatch_reset(&timer)
-            time.stopwatch_start(&timer)
-        }
-
-        if redraw_flag {
-            @static frame_id : i64 = 0
-            gl.Clear(gl.COLOR_BUFFER_BIT)
-            w,h : c.int
-            sdl.GetWindowSize(wnd, &w,&h)
-            gl.Viewport(0,0,w,h)
-
-            immediate_begin({0,0,w,h})
-            immediate_texture({10,10}, vec_i2f(Vec2i{canvas.width, canvas.height}), {1,1,1,1}, canvas.texid)
-            immediate_end()
-            
-            nvg.BeginFrame(vg, auto_cast w,auto_cast h, 1.0)
-            nvg.Save(vg)
-            
-            draw(vg, &pic)
-            // draw_canvas(vg, app.canvas, 30,30, 1.0)
-
-            nvg.BeginPath(vg)
-            nvg.FillColor(vg, {.8,.6,0,0.9})
-            nvg.FontSize(vg, 24)
-            nvg.Text(vg, 5,25, fmt.tprintf("FID: {}", frame_id))
-            
-            nvg.Restore(vg)
-            nvg.EndFrame(vg)
-            redraw_flag = false
-            frame_id += 1
-            sdl.GL_SwapWindow(wnd)
-        }
-
-        {// Update control
-            update_ms := time.duration_milliseconds(time.stopwatch_duration(update_timer))
-            time.stopwatch_reset(&update_timer)
-            delay :int= 1000/60 - auto_cast update_ms
-            if delay >= 0 {
-                sdl.Delay(cast(u32)delay)
-            }
-            time.stopwatch_reset(&update_timer)
         }
     }
 }
 
-draw :: proc(vg : ^nvg.Context, bg: ^int) {
+draw :: proc(vg : ^nvg.Context) {
+    canvas := &app.canvas
+    w, h := app.window_size.x,app.window_size.y
+    immediate_begin({0,0,w,h})
+    immediate_texture({10,10}, vec_i2f(Vec2i{canvas.width, canvas.height}), {1,1,1,1}, canvas.texid)
+    immediate_end()
+    
+    nvg.BeginFrame(vg, auto_cast w,auto_cast h, 1.0)
+    nvg.Save(vg)
+    
+    draw_nvg_records(vg)
+    // draw_canvas(vg, app.canvas, 30,30, 1.0)
+
+    nvg.BeginPath(vg)
+    nvg.FillColor(vg, {.8,.6,0,0.9})
+    nvg.FontSize(vg, 24)
+    nvg.Text(vg, 5,25, fmt.tprintf("FID: {}", app.frame_id))
+    
+    nvg.Restore(vg)
+    nvg.EndFrame(vg)
+
+}
+
+draw_nvg_records :: proc(vg : ^nvg.Context) {
     xpos :c.int= 10
     ypos :c.int= 30
     font_size :c.int= 24
@@ -159,11 +151,4 @@ draw :: proc(vg : ^nvg.Context, bg: ^int) {
     }
 
     nvg.BeginPath(vg)
-}
-
-draw_canvas :: proc(vg: ^nvg.Context, canvas: Canvas, posx, posy: f32, scale: f32) {
-    nvg.BeginPath(vg)
-    nvg.Rect(vg, posx,posy, auto_cast canvas.width, auto_cast canvas.height)
-    nvg.FillPaint(vg, nvg.ImagePattern(posx,posy, auto_cast canvas.width, auto_cast canvas.height, 0, auto_cast canvas.texid, 1))
-    nvg.Fill(vg)
 }

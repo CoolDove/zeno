@@ -17,8 +17,12 @@ Application :: struct {
 ApplicationBase :: struct {
     vg : ^nvg.Context,
     wnd : ^sdl.Window,
+
+    window_size : Vec2i,
+    frame_id : u64,
+    timer : time.Stopwatch,// Frame timer
+
     gl_ctx : sdl.GLContext,
-    timer : time.Stopwatch,
 }
 
 application_init :: proc(app : ^Application) {
@@ -36,12 +40,19 @@ application_init :: proc(app : ^Application) {
     sdl.GL_MakeCurrent(app_base.wnd, app_base.gl_ctx)
     gl.load_up_to(3, 3, sdl.gl_set_proc_address)
 
-    app_base.vg = nvggl.Create(nvggl.CreateFlags{.ANTI_ALIAS, .STENCIL_STROKES, .DEBUG})
+    vg := nvggl.Create(nvggl.CreateFlags{.ANTI_ALIAS, .STENCIL_STROKES, .DEBUG})
+    victor_regular := nvg.CreateFont(vg, "victor-regular", "./victor-regular.ttf")
+    unifont := nvg.CreateFont(vg, "unifont", "./unifont.ttf")
+    nvg.AddFallbackFontId(vg, victor_regular, unifont)
+    app_base.vg = vg
 
     // 
     app.app_base = app_base
+
     tween_system_init()
     tweener_init(&app.tweener, 4)
+
+    time.stopwatch_start(&timer)
 }
 
 application_release :: proc(app : ^Application) {

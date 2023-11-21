@@ -40,7 +40,7 @@ tween_system_init :: proc() {
 }
 
 // You should place this before all `tween` calls in a step.
-tweener_update :: proc(tweener: ^Tweener, delta: f32) {
+tweener_update :: proc(tweener: ^Tweener, delta: f32/*in seconds*/) {
     for &tween, idx in tweener.tweens {
         if tween.id <= 0 do continue
         tween.time += delta
