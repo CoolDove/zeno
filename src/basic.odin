@@ -9,3 +9,5 @@ Vec4 :: dgl.Vec4
 Vec2i :: dgl.Vec2i
 Vec3i :: dgl.Vec3i
 Vec4i :: dgl.Vec4i
+
+Color32 :: [4]u8

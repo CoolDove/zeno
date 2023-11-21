@@ -49,8 +49,9 @@ main :: proc() {
     tween_system_init()
     tweener_init(&tweener, 16); defer tweener_release(&tweener)
 
-    canvas_init(vg, &app.canvas, 320,320, {200, 80, 10, 255})
-    defer canvas_release(vg, &app.canvas)
+    // canvas_init(&app.canvas, 320,320, Color32{200, 80, 10, 255})
+    canvas_init(&app.canvas, "./p1113.png")
+    defer canvas_release(&app.canvas)
 
     immediate_init(); defer immediate_release()
 
@@ -74,7 +75,7 @@ main :: proc() {
                     cursor = math.max(cursor - 1, 0)
                     tween(&tweener, &the_ypos, auto_cast (30+cursor*34), 0.12)->set_easing(ease_outcirc)
                 } else if event.key.keysym.sym == .a {
-                    append(&records, Record{fmt.caprintf("Hello, Dove! -{}", len(records))})
+                    append(&records, Record{fmt.caprintf("Hello, Dove! 你好鸽子 -{}", len(records))})
                 }
                 redraw_flag = true
             }
@@ -96,14 +97,14 @@ main :: proc() {
             gl.Viewport(0,0,w,h)
 
             immediate_begin({0,0,w,h})
-            immediate_quad({80,90}, {100, 300}, {0.2, 0.9, 0.8, 1.0})
+            immediate_texture({10,10}, vec_i2f(Vec2i{canvas.width, canvas.height}), {1,1,1,1}, canvas.texid)
             immediate_end()
             
             nvg.BeginFrame(vg, auto_cast w,auto_cast h, 1.0)
             nvg.Save(vg)
             
             draw(vg, &pic)
-            draw_canvas(vg, app.canvas, 30,30, 1.0)
+            // draw_canvas(vg, app.canvas, 30,30, 1.0)
 
             nvg.BeginPath(vg)
             nvg.FillColor(vg, {.8,.6,0,0.9})
@@ -163,6 +164,6 @@ draw :: proc(vg : ^nvg.Context, bg: ^int) {
 draw_canvas :: proc(vg: ^nvg.Context, canvas: Canvas, posx, posy: f32, scale: f32) {
     nvg.BeginPath(vg)
     nvg.Rect(vg, posx,posy, auto_cast canvas.width, auto_cast canvas.height)
-    nvg.FillPaint(vg, nvg.ImagePattern(posx,posy, auto_cast canvas.width, auto_cast canvas.height, 0, auto_cast canvas.imgid, 1))
+    nvg.FillPaint(vg, nvg.ImagePattern(posx,posy, auto_cast canvas.width, auto_cast canvas.height, 0, auto_cast canvas.texid, 1))
     nvg.Fill(vg)
 }

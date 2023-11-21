@@ -37,7 +37,7 @@ immediate_init :: proc() {
     basic_vert :: #load("../res/immediate_basic.vert", string)
     basic_frag :: #load("../res/immediate_basic.frag", string)
     basic_shader = dgl.shader_load_from_sources(basic_vert, basic_frag).id
-    default_white_tex = texture_create_with_color(1,1, {255,255,255,255})
+    default_white_tex = dgl.texture_create_with_color(1,1, {255,255,255,255})
 }
 immediate_release :: proc() {
     using ime_context
