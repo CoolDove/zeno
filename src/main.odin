@@ -96,15 +96,6 @@ main :: proc() {
             }
         }
 
-        if redraw_flag {
-            gl.Clear(gl.COLOR_BUFFER_BIT)
-            gl.Viewport(0,0,app.window_size.x,app.window_size.y)
-            draw(vg)
-            redraw_flag = false
-            app.frame_id += 1
-            sdl.GL_SwapWindow(wnd)
-        }
-
         {// Update control
             update_ms := time.duration_milliseconds(time.stopwatch_duration(app.timer))
             delay :int= 1000/60 - auto_cast update_ms
@@ -117,6 +108,16 @@ main :: proc() {
             tweener_update(&tweener, 0.016)
             time.stopwatch_reset(&timer)
         }
+        if redraw_flag {
+            gl.ClearColor(0.2,0.2,0.2,1.0)
+            gl.Clear(gl.COLOR_BUFFER_BIT)
+            gl.Viewport(0,0,app.window_size.x,app.window_size.y)
+            draw(vg)
+            redraw_flag = false
+            app.frame_id += 1
+            sdl.GL_SwapWindow(wnd)
+        }
+
     }
 }
 
@@ -129,9 +130,16 @@ draw :: proc(vg : ^nvg.Context) {
         hh :f32= 0.5 * cast(f32)h
         x := hw - 0.5 * canvas.scale * cast(f32)canvas.width
         y := hh - 0.5 * canvas.scale * cast(f32)canvas.height
+        cw := cast(f32)canvas.width*canvas.scale
+        ch := cast(f32)canvas.height*canvas.scale
+        immediate_quad(
+            {x,y}+canvas.offset+{5,5},
+            Vec2{cw, ch}, 
+            {0.1,0.1,0.1,0.9}
+        )
         immediate_texture(
             {x,y}+canvas.offset,
-            Vec2{cast(f32)canvas.width*canvas.scale, cast(f32)canvas.height*canvas.scale}, 
+            Vec2{cw, ch}, 
             {1,1,1,1}, 
             canvas.texid)
     }
