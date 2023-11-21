@@ -56,6 +56,8 @@ main :: proc() {
 
     quit : bool
     event : sdl.Event
+    update_timer : time.Stopwatch
+    time.stopwatch_start(&update_timer); defer time.stopwatch_stop(&update_timer)
     for !quit {
         if sdl.PollEvent(&event) {
             #partial switch event.type {
@@ -65,7 +67,6 @@ main :: proc() {
             case .WINDOWEVENT:
                 redraw_flag = true
             case .KEYDOWN:   
-                // fmt.printf("key down: {}\n", event.key.keysym)
                 if event.key.keysym.sym == .j {
                     cursor = math.min(cursor + 1, len(records)-1)
                     tween(&tweener, &the_ypos, auto_cast (30+cursor*34), 0.12)->set_easing(ease_outcirc)
@@ -78,7 +79,6 @@ main :: proc() {
                 redraw_flag = true
             }
         }
-
         if time.duration_seconds(time.stopwatch_duration(timer)) >= 0.016 {
             if tweener_count(&tweener) > 0 {
                 redraw_flag = true
@@ -102,11 +102,6 @@ main :: proc() {
             nvg.BeginFrame(vg, auto_cast w,auto_cast h, 1.0)
             nvg.Save(vg)
             
-            // nvg.BeginPath(vg)
-            // nvg.Circle(vg, 150,150, 300)
-            // nvg.FillPaint(vg, nvg.ImagePattern(0,0, 600, 200, 0, pic, 1.0))
-            // nvg.Fill(vg)
-
             draw(vg, &pic)
             draw_canvas(vg, app.canvas, 30,30, 1.0)
 
@@ -118,9 +113,18 @@ main :: proc() {
             nvg.Restore(vg)
             nvg.EndFrame(vg)
             redraw_flag = false
-            sdl.GL_SwapWindow(wnd)
-
             frame_id += 1
+            sdl.GL_SwapWindow(wnd)
+        }
+
+        {// Update control
+            update_ms := time.duration_milliseconds(time.stopwatch_duration(update_timer))
+            time.stopwatch_reset(&update_timer)
+            delay :int= 1000/60 - auto_cast update_ms
+            if delay >= 0 {
+                sdl.Delay(cast(u32)delay)
+            }
+            time.stopwatch_reset(&update_timer)
         }
     }
 }
