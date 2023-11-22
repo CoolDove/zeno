@@ -62,8 +62,8 @@ main :: proc() {
                 // TODO: in resize event
                 w,h : c.int
                 sdl.GetWindowSize(wnd, &w,&h)
-                app.window_size.x = w
-                app.window_size.y = h
+                app.window_size.x = auto_cast w
+                app.window_size.y = auto_cast h
             case .KEYDOWN:   
                 if event.key.keysym.sym == .j {
                     cursor = math.min(cursor + 1, len(records)-1)
@@ -76,9 +76,15 @@ main :: proc() {
                 }
                 redraw_flag = true
             case .MOUSEWHEEL:
-                // fmt.printf("{}\n", event.wheel)
                 if (sdl.GetModState() & sdl.KMOD_LSHIFT) == {} {
+                    x,y : c.int
+                    sdl.GetMouseState(&x,&y)
+                    scale_before := canvas.scale
                     canvas.scale = math.clamp(canvas.scale + 0.1 * cast(f32)event.wheel.y * canvas.scale, 0.01, 5.0)
+                    mpos := Vec2{auto_cast x,auto_cast y}
+                    dir := mpos - canvas.offset
+                    to := (canvas.scale/scale_before) * dir
+                    canvas.offset += to
                 } else {
                     app.brush_size = math.clamp(event.wheel.y * 2 + app.brush_size, 1, 500)
                 }
@@ -105,7 +111,7 @@ main :: proc() {
         if redraw_flag {
             gl.ClearColor(0.2,0.2,0.2,1.0)
             gl.Clear(gl.COLOR_BUFFER_BIT)
-            gl.Viewport(0,0,app.window_size.x,app.window_size.y)
+            gl.Viewport(0,0,auto_cast app.window_size.x,auto_cast app.window_size.y)
             draw(vg)
             redraw_flag = false
             app.frame_id += 1
@@ -131,20 +137,17 @@ main :: proc() {
 draw :: proc(vg : ^nvg.Context) {
     canvas := &app.canvas
     w, h := app.window_size.x,app.window_size.y
-    immediate_begin({0,0,w,h})
+    immediate_begin({0,0, auto_cast w, auto_cast h})
     {
-        hw :f32= 0.5 * cast(f32)w
-        hh :f32= 0.5 * cast(f32)h
-        x := hw - 0.5 * canvas.scale * cast(f32)canvas.width
-        y := hh - 0.5 * canvas.scale * cast(f32)canvas.height
+        pos := canvas->cvs2wnd({0,0})
         cw := cast(f32)canvas.width*canvas.scale
         ch := cast(f32)canvas.height*canvas.scale
         immediate_quad(
-            {x,y}+canvas.offset+{5,5},
+            pos+{5,5},// {x,y}+canvas.offset+{5,5},
             Vec2{cw, ch}, 
             {0.1,0.1,0.1,0.9})
         immediate_texture(
-            {x,y}+canvas.offset,
+            pos,//{x,y}+canvas.offset,
             Vec2{cw, ch}, 
             {1,1,1,1}, 
             canvas.texid)
@@ -156,18 +159,36 @@ draw :: proc(vg : ^nvg.Context) {
     
     draw_nvg_records(vg)
     draw_nvg_cursor(vg)
-    // draw_canvas(vg, app.canvas, 30,30, 1.0)
 
     nvg.BeginPath(vg)
-    nvg.FillColor(vg, {.8,.6,0,0.9})
     nvg.FontSize(vg, 24)
-    nvg.Text(vg, 5,25, fmt.tprintf("FID: {}", app.frame_id))
-    nvg.Text(vg, 5,25+30, fmt.tprintf("scale: {}", app.canvas.scale))
-    nvg.Text(vg, 5,25+30+30, fmt.tprintf("brush size: {}", app.brush_size))
+
+    _textline :: proc(vg: ^nvg.Context, x:f32, y: ^f32, msg: string) {
+        nvg.FillColor(vg, {0,0,0,.8})
+        nvg.Text(vg, x+1.5, y^+1.5, msg)
+        nvg.FillColor(vg, {.2,.8,.1,1.0})
+        nvg.Text(vg, x, y^, msg)
+        y^ = y^+30
+    }
+    {
+        y :f32= 25
+        _textline(vg, 5, &y, fmt.tprintf("FID: {}", app.frame_id))
+        y += 10
+        _textline(vg, 5, &y, fmt.tprintf("brush size: {}", app.brush_size))
+        y += 10
+        _textline(vg, 5, &y, "canvas:")
+        _textline(vg, 10, &y, fmt.tprintf("scale: {}", app.canvas.scale))
+        _textline(vg, 10, &y, fmt.tprintf("offset: {}", canvas.offset))
+        y += 10
+        _textline(vg, 5, &y, "mouse:")
+        mouse_cvs : Vec2i
+        sdl.GetMouseState(&mouse_cvs.x, &mouse_cvs.y)
+        _textline(vg, 10, &y, fmt.tprintf("wnd: {}", vec_i2f(mouse_cvs)))
+        _textline(vg, 10, &y, fmt.tprintf("cvs: {}", canvas->wnd2cvs(vec_i2f(mouse_cvs))))
+    }
     
     nvg.Restore(vg)
     nvg.EndFrame(vg)
-
 }
 
 draw_nvg_records :: proc(vg : ^nvg.Context) {

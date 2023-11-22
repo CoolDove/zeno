@@ -24,7 +24,8 @@ ApplicationBase :: struct {
     vg : ^nvg.Context,
     wnd : ^sdl.Window,
 
-    window_size : Vec2i,
+    // This should have be Vec2i, but to reduce the cost of type casting.
+    window_size : Vec2,
     frame_id : u64,
     timer : time.Stopwatch,// Frame timer
 
