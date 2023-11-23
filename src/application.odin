@@ -48,8 +48,8 @@ application_init :: proc(app : ^Application) {
     gl.load_up_to(3, 3, sdl.gl_set_proc_address)
 
     vg := nvggl.Create(nvggl.CreateFlags{.ANTI_ALIAS, .STENCIL_STROKES, .DEBUG})
-    victor_regular := nvg.CreateFont(vg, "victor-regular", "./victor-regular.ttf")
-    unifont := nvg.CreateFont(vg, "unifont", "./unifont.ttf")
+    victor_regular := nvg.CreateFont(vg, "victor-regular", "./res/victor-regular.ttf")
+    unifont := nvg.CreateFont(vg, "unifont", "./res/unifont.ttf")
     nvg.AddFallbackFontId(vg, victor_regular, unifont)
     app_base.vg = vg
 

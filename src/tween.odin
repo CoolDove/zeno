@@ -33,13 +33,10 @@ TweenRef :: struct {
 // tween setup
 tween_system_init :: proc() {
     using runtime
-    // tweens = make([dynamic]Tween, 0, 16)
-
     union_type := type_info_of(TweenableValue).variant.(Type_Info_Named).base
     tweenable_types = union_type.variant.(Type_Info_Union).variants
 }
 
-// You should place this before all `tween` calls in a step.
 tweener_update :: proc(tweener: ^Tweener, delta: f32/*in seconds*/) {
     for &tween, idx in tweener.tweens {
         if tween.id <= 0 do continue
@@ -98,6 +95,7 @@ Tween :: struct {
 Tween_VTable :: struct {
     set_on_complete : type_of(_set_on_complete),
     set_easing : type_of(_set_easing),
+    reference : type_of(_reference),
 }
 
 tween :: proc(tweener: ^Tweener, value: ^$T, target : T, duration : f32) -> ^Tween {
@@ -132,14 +130,23 @@ tween :: proc(tweener: ^Tweener, value: ^$T, target : T, duration : f32) -> ^Twe
 _tween_vtable := Tween_VTable {
     _set_on_complete,
     _set_easing,
+    _reference,
 }
+
+@(private="file")
 _set_on_complete :: proc(tween: ^Tween, callback: proc(use_data: rawptr), user_data: rawptr=nil) -> ^Tween {
     tween.on_complete = callback
     tween.user_data = user_data
     return tween
 }
+@(private="file")
 _set_easing :: proc(tween: ^Tween, easing_proc : EasingProc) {
     tween.easing_proc = easing_proc
+}
+@(private="file")
+_reference :: proc(tween: ^Tween) -> TweenRef {
+    assert(false, "Not implemented.")
+    return {}
 }
 
 // ## easing proc

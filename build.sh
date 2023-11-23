@@ -1,1 +1,1 @@
-odin build ./src/ -resource:app.rc -out:zeno.exe
+odin build ./src/ -resource:app.rc -out:zeno.exe -debug
