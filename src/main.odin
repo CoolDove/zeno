@@ -92,6 +92,8 @@ main :: proc() {
                 } else if event.button.button == sdl.BUTTON_LEFT {
                     append(&strokes, make([dynamic]StrokePoint))
                     painting = true
+                    temporary_paint_add_dap()
+                    nodelay_flag = true
                 }
             case .MOUSEBUTTONUP:
                 if event.button.button == sdl.BUTTON_RIGHT {
@@ -105,15 +107,19 @@ main :: proc() {
                     relative :Vec2i= {event.motion.xrel, event.motion.yrel}
                     app.canvas.offset += vec_i2f(relative)
                 } else if painting {
-                    x,y : c.int
-                    sdl.GetMouseState(&x,&y)
-                    mpos := Vec2{auto_cast x,auto_cast y}
-                    p := StrokePoint{canvas->wnd2cvs(mpos), cast(f32)app.brush_size}
-                    append(&strokes[len(strokes)-1], p)
+                    temporary_paint_add_dap()
                     nodelay_flag = true
                 }
                 redraw_flag = true
             }
+        }
+
+        temporary_paint_add_dap :: proc() {
+            x,y : c.int
+            sdl.GetMouseState(&x,&y)
+            mpos := Vec2{auto_cast x,auto_cast y}
+            p := StrokePoint{canvas->wnd2cvs(mpos), cast(f32)app.brush_size}
+            append(&strokes[len(strokes)-1], p)
         }
 
         if redraw_flag {

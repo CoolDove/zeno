@@ -38,7 +38,7 @@ application_init :: proc(app : ^Application) {
     sdl.GL_SetAttribute(.CONTEXT_MINOR_VERSION, 3);
     sdl.GL_SetAttribute(.CONTEXT_PROFILE_MASK, auto_cast sdl.GLprofile.COMPATIBILITY);
     app_base : ApplicationBase
-    app_base.wnd = sdl.CreateWindow("zeno", 500, 30, 600,800, sdl.WindowFlags{.RESIZABLE, .OPENGL})
+    app_base.wnd = sdl.CreateWindow("zeno", sdl.WINDOWPOS_CENTERED, sdl.WINDOWPOS_CENTERED, 800,600, sdl.WindowFlags{.RESIZABLE, .OPENGL})
 
     app_base.gl_ctx = sdl.GL_CreateContext(app_base.wnd)
     assert(app_base.gl_ctx != nil, fmt.tprintf("Failed to create GLContext for window, because: {}.\n", sdl.GetError()))
