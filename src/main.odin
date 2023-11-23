@@ -79,12 +79,14 @@ main :: proc() {
                 if (sdl.GetModState() & sdl.KMOD_LSHIFT) == {} {
                     x,y : c.int
                     sdl.GetMouseState(&x,&y)
+                    mpos := Vec2{auto_cast x,auto_cast y}
+                    cpos := canvas->wnd2cvs(mpos)
                     scale_before := canvas.scale
                     canvas.scale = math.clamp(canvas.scale + 0.1 * cast(f32)event.wheel.y * canvas.scale, 0.01, 5.0)
-                    mpos := Vec2{auto_cast x,auto_cast y}
-                    dir := mpos - canvas.offset
-                    to := (canvas.scale/scale_before) * dir
-                    canvas.offset += to
+                    dir := mpos - canvas->cvs2wnd(cpos)
+                    // dir := mpos - canvas.offset
+                    // to := (canvas.scale/scale_before) * dir
+                    canvas.offset += dir
                 } else {
                     app.brush_size = math.clamp(event.wheel.y * 2 + app.brush_size, 1, 500)
                 }
