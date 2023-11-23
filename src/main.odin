@@ -74,7 +74,8 @@ main :: proc() {
                 continue
             case .WINDOWEVENT:
                 redraw_flag = true
-                // TODO: in resize event
+                painting = false
+                // TODO: only in resize event
                 w,h : c.int
                 sdl.GetWindowSize(wnd, &w,&h)
                 app.window_size.x = auto_cast w
@@ -224,7 +225,7 @@ draw :: proc(vg : ^nvg.Context) {
 
     _textline :: proc(vg: ^nvg.Context, x:f32, y: ^f32, msg: string) {
         nvg.FillColor(vg, {0,0,0,.8})
-        nvg.Text(vg, x+1.5, y^+1.5, msg)
+        nvg.Text(vg, x+1.2, y^+1.2, msg)
         nvg.FillColor(vg, {.2,.8,.1,1.0})
         nvg.Text(vg, x, y^, msg)
         y^ = y^+30

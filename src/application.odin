@@ -38,7 +38,7 @@ application_init :: proc(app : ^Application) {
     sdl.GL_SetAttribute(.CONTEXT_MINOR_VERSION, 3);
     sdl.GL_SetAttribute(.CONTEXT_PROFILE_MASK, auto_cast sdl.GLprofile.COMPATIBILITY);
     app_base : ApplicationBase
-    app_base.wnd = sdl.CreateWindow("doon", 500, 30, 600,800, sdl.WindowFlags{.RESIZABLE, .OPENGL})
+    app_base.wnd = sdl.CreateWindow("zeno", 500, 30, 600,800, sdl.WindowFlags{.RESIZABLE, .OPENGL})
 
     app_base.gl_ctx = sdl.GL_CreateContext(app_base.wnd)
     assert(app_base.gl_ctx != nil, fmt.tprintf("Failed to create GLContext for window, because: {}.\n", sdl.GetError()))
@@ -107,25 +107,3 @@ _cursors_release :: proc() {
     sdl.FreeCursor(_CURSOR_BRUSH)
     sdl.FreeCursor(_CURSOR_DRAGGER)
 }
-
-// @(private="file")
-// _cursor_create_brush_cross :: proc() -> ^sdl.Cursor {
-//     img := dgl.image_load("./res/cursor_brush.png"); defer dgl.image_free(&img)
-
-//     w, h := img.size.x, img.size.y
-//     raw :[]Color32= slice.from_ptr(cast(^Color32)img.data, cast(int)(w*h))
-    
-//     data := make_slice([]u8, w*h); defer delete(data)
-//     mask := make_slice([]u8, w*h); defer delete(mask)
-
-//     for i in 0..<w*h {
-//         if raw[i].a > 0 {
-//             data[i] = 0b1000_0000
-//             mask[i] = 0b1000_0000
-//         }
-//     }
-//     cursor := sdl.CreateCursor(raw_data(data), raw_data(mask), w,h, 16,16)
-//     fmt.printf("cursor: {}\n", cursor)
-//     fmt.printf("err: {}\n", sdl.GetError())
-//     return cursor
-// }
