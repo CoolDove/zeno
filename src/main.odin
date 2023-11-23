@@ -246,6 +246,7 @@ draw :: proc(vg : ^nvg.Context) {
         y^ = y^+30
     }
     {
+        profile_begin("DrawTexts")
         y :f32= 25
         _textline(vg, 5, &y, fmt.tprintf("FID: {}", app.frame_id))
         _textline(vg, 5, &y, fmt.tprintf("No delay flag: {}", nodelay_flag))
@@ -261,6 +262,7 @@ draw :: proc(vg : ^nvg.Context) {
         sdl.GetMouseState(&mouse_cvs.x, &mouse_cvs.y)
         _textline(vg, 10, &y, fmt.tprintf("wnd: {}", vec_i2f(mouse_cvs)))
         _textline(vg, 10, &y, fmt.tprintf("cvs: {}", canvas->wnd2cvs(vec_i2f(mouse_cvs))))
+        profile_end()
 
         profiles := profile_collect()
         y += 10
