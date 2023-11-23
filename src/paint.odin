@@ -16,11 +16,6 @@ Dap :: struct {
     scale : f32,
 }
 
-paint_init :: proc() {
-}
-paint_release :: proc() {
-}
-
 paint_begin :: proc(canvas: ^Canvas, layer: ^Layer, brush : u32/*place holder*/) {
     // Copy the layer 
 }
