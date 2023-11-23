@@ -8,6 +8,7 @@ Paint :: struct {
     layer : ^Layer,
     brush : u32,
     daps : [dynamic]Dap,
+    activate : bool,
 }
 
 Dap :: struct {
@@ -16,18 +17,20 @@ Dap :: struct {
     scale : f32,
 }
 
-paint_begin :: proc(canvas: ^Canvas, layer: ^Layer, brush : u32/*place holder*/) {
+paint_begin :: proc(canvas: ^Canvas, layer: ^Layer) {
     // Copy the layer 
+    _paint.activate = true
 }
 paint_end :: proc() {
+    _paint.activate = false
 }
 
 paint_push_dap :: proc(dap: Dap) {
     append(&_paint.daps, dap)
 }
 
-// Draw n daps, and return how many daps remained.
-paint_draw :: proc(n: int) -> int {
+// Draw n daps, and return how many daps remained, -1 means draw all daps.
+paint_draw :: proc(n:int= -1) -> int {
     return 0
 }
 
@@ -37,5 +40,5 @@ paint_count :: proc() -> int {
 }
 
 paint_is_painting :: proc() -> bool {
-    return false
+    return _paint.activate
 }

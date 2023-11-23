@@ -18,6 +18,7 @@ Application :: struct {
     tweener : Tweener,
     canvas : Canvas,
     brush_size : i32,
+    paintcurve : PaintCurve,
 }
 
 ApplicationBase :: struct {
@@ -26,6 +27,8 @@ ApplicationBase :: struct {
 
     // This should have be Vec2i, but to reduce the cost of type casting.
     window_size : Vec2,
+    mouse_pos : Vec2,
+
     frame_id : u64,
     timer : time.Stopwatch,// Frame timer
 
@@ -61,15 +64,19 @@ application_init :: proc(app : ^Application) {
 
     time.stopwatch_start(&timer)
 
-    app.brush_size = 5
-
     _cursors_init()
-
     cursor_set(.Default)
 
+    /* Application */
+    app.brush_size = 5
+    paintcurve_init(&app.paintcurve)
 }
 
 application_release :: proc(app : ^Application) {
+    /* Application */
+    paintcurve_release(&app.paintcurve)
+
+    /* Base */
     tweener_release(&app.tweener)
     nvggl.Destroy(app.vg)
     _cursors_release()
@@ -106,4 +113,10 @@ _cursors_init :: proc() {
 _cursors_release :: proc() {
     sdl.FreeCursor(_CURSOR_BRUSH)
     sdl.FreeCursor(_CURSOR_DRAGGER)
+}
+
+_app_update_mouse_position :: proc() {
+    x,y : c.int
+    sdl.GetMouseState(&x,&y)
+    app.mouse_pos = Vec2{auto_cast x,auto_cast y}
 }

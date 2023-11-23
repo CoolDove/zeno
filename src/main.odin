@@ -54,7 +54,6 @@ main :: proc() {
     for !quit {
         // states
         @static dragging := false
-        @static painting := false
 
         if sdl.PollEvent(&event) {
             #partial switch event.type {
@@ -63,12 +62,12 @@ main :: proc() {
                 continue
             case .WINDOWEVENT:
                 redraw_flag = true
-                painting = false
                 // TODO: only in resize event
                 w,h : c.int
                 sdl.GetWindowSize(wnd, &w,&h)
                 app.window_size.x = auto_cast w
                 app.window_size.y = auto_cast h
+                if paint_is_painting() do paint_end()
             case .KEYDOWN:   
                 redraw_flag = true
             case .MOUSEWHEEL:
@@ -86,43 +85,53 @@ main :: proc() {
                 }
                 redraw_flag = true
             case .MOUSEBUTTONDOWN:
+                _app_update_mouse_position()
                 if event.button.button == sdl.BUTTON_RIGHT {
                     dragging = true
                     cursor_set(.Dragger)
                 } else if event.button.button == sdl.BUTTON_LEFT {
+                    // The paint
                     append(&strokes, make([dynamic]StrokePoint))
-                    painting = true
-                    temporary_paint_add_dap()
+                    // append(&strokes[len(strokes)-1], StrokePoint{app.mouse_pos, 1.0}) // Temporary draw
+
+                    paintcurve_clear(&paintcurve)
+                    paintcurve_append(&paintcurve, canvas->wnd2cvs(app.mouse_pos), 1.0)
+                    paint_begin(&canvas, nil)
+
                     nodelay_flag = true
                 }
             case .MOUSEBUTTONUP:
+                _app_update_mouse_position()
                 if event.button.button == sdl.BUTTON_RIGHT {
                     dragging = false
                     cursor_set(.Default)
                 } else if event.button.button == sdl.BUTTON_LEFT {
-                    painting = false
+                    if paint_is_painting() do paint_end()
                 }
             case .MOUSEMOTION:
+                _app_update_mouse_position()
                 if dragging {
                     relative :Vec2i= {event.motion.xrel, event.motion.yrel}
                     app.canvas.offset += vec_i2f(relative)
-                } else if painting {
-                    temporary_paint_add_dap()
+                } else if paint_is_painting() {
+                    paintcurve_append(&app.paintcurve, canvas->wnd2cvs(app.mouse_pos), 1.0)
+                    length := paintcurve_length(&app.paintcurve)
+                    for app.paintcurve.t < length {
+                        paintcurve_step(&app.paintcurve, 8.0)
+                        p,_ := paintcurve_get(&app.paintcurve)
+                        paint_push_dap({p.position, 0, p.pressure})
+                        append(&strokes[len(strokes)-1], StrokePoint{p.position, p.pressure * cast(f32)app.brush_size}) // Temporary draw
+                    }
                     nodelay_flag = true
                 }
                 redraw_flag = true
             }
         }
 
-        temporary_paint_add_dap :: proc() {
-            x,y : c.int
-            sdl.GetMouseState(&x,&y)
-            mpos := Vec2{auto_cast x,auto_cast y}
-            p := StrokePoint{canvas->wnd2cvs(mpos), cast(f32)app.brush_size}
-            append(&strokes[len(strokes)-1], p)
-        }
-
         if redraw_flag {
+            /* Flush painting daps */
+            paint_draw(-1)
+            
             gl.ClearColor(0.2,0.2,0.2,1.0)
             gl.Clear(gl.COLOR_BUFFER_BIT)
             gl.Viewport(0,0,auto_cast app.window_size.x,auto_cast app.window_size.y)

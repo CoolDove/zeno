@@ -25,10 +25,10 @@ Tweener :: struct {
     available_id : int,
 }
 
-TweenRef :: struct {
-    tweener : ^Tweener,
-    index, id : int,
-}
+// TweenRef :: struct {
+//     tweener : ^Tweener,
+//     index, id : int,
+// }
 
 // tween setup
 tween_system_init :: proc() {
@@ -95,7 +95,7 @@ Tween :: struct {
 Tween_VTable :: struct {
     set_on_complete : type_of(_set_on_complete),
     set_easing : type_of(_set_easing),
-    reference : type_of(_reference),
+    // reference : type_of(_reference),
 }
 
 tween :: proc(tweener: ^Tweener, value: ^$T, target : T, duration : f32) -> ^Tween {
@@ -130,7 +130,7 @@ tween :: proc(tweener: ^Tweener, value: ^$T, target : T, duration : f32) -> ^Twe
 _tween_vtable := Tween_VTable {
     _set_on_complete,
     _set_easing,
-    _reference,
+    // _reference,
 }
 
 @(private="file")
@@ -143,11 +143,11 @@ _set_on_complete :: proc(tween: ^Tween, callback: proc(use_data: rawptr), user_d
 _set_easing :: proc(tween: ^Tween, easing_proc : EasingProc) {
     tween.easing_proc = easing_proc
 }
-@(private="file")
-_reference :: proc(tween: ^Tween) -> TweenRef {
-    assert(false, "Not implemented.")
-    return {}
-}
+// @(private="file")
+// _reference :: proc(tween: ^Tween) -> TweenRef {
+//     assert(false, "Not implemented.")
+//     return {}
+// }
 
 // ## easing proc
 // Easing function reference: [https://easings.net](https://easings.net)
