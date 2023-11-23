@@ -8,6 +8,7 @@ import gl "vendor:OpenGL"
 import "core:strings"
 import "core:c"
 import "core:math"
+import "core:math/linalg"
 import "core:fmt"
 import "core:time"
 
@@ -114,10 +115,13 @@ main :: proc() {
                     relative :Vec2i= {event.motion.xrel, event.motion.yrel}
                     app.canvas.offset += vec_i2f(relative)
                 } else if paint_is_painting() {
+                    points := app.paintcurve.raw_points
+                    last := points[len(points)-1]
+                    smooth :f32= 0.8
+                    // paintcurve_append(&app.paintcurve, linalg.lerp(last.position, canvas->wnd2cvs(app.mouse_pos), 1-smooth), 1.0)
                     paintcurve_append(&app.paintcurve, canvas->wnd2cvs(app.mouse_pos), 1.0)
                     length := paintcurve_length(&app.paintcurve)
-                    for app.paintcurve.t < length {
-                        paintcurve_step(&app.paintcurve, 8.0)
+                    for paintcurve_step(&app.paintcurve, 8.0) {
                         p,_ := paintcurve_get(&app.paintcurve)
                         paint_push_dap({p.position, 0, p.pressure})
                         append(&strokes[len(strokes)-1], StrokePoint{p.position, p.pressure * cast(f32)app.brush_size}) // Temporary draw
@@ -157,6 +161,8 @@ main :: proc() {
                 update(1.0/cast(f32)FPS)
             }
         }
+
+        profile_clear()
     }
 }
 
@@ -171,6 +177,8 @@ update :: proc(delta: f32) {
 draw :: proc(vg : ^nvg.Context) {
     canvas := &app.canvas
     w, h := app.window_size.x,app.window_size.y
+
+    profile_begin("DrawCanvas")
     immediate_begin({0,0, auto_cast w, auto_cast h})
     {
         pos := canvas->cvs2wnd({0,0})
@@ -187,10 +195,12 @@ draw :: proc(vg : ^nvg.Context) {
             canvas.texid)
     }
     immediate_end()
+    profile_end()
     
     nvg.BeginFrame(vg, auto_cast w,auto_cast h, 1.0)
     nvg.Save(vg)
 
+    profile_begin("DrawStrokes")
     // ## Draw paint strokes
     for s in strokes {
         if len(s) < 2 do continue
@@ -210,7 +220,18 @@ draw :: proc(vg : ^nvg.Context) {
         //  close for stupid nvg to recognize them as a closed path. Then nvg would delete one point
         //  to make an `index out of range` error which is totally unnecessary.
         nvg.Stroke(vg)
+
+
+        for p in s {
+            nvg.BeginPath(vg)
+            wpos := canvas->cvs2wnd(p.pos)
+            nvg.FillColor(vg, {0.4, 1.0, 0.2, 1.0})
+            nvg.Circle(vg, wpos.x, wpos.y, p.scale * canvas.scale * 0.5)
+            nvg.Fill(vg)
+        }
+        
     }
+    profile_end()
     
     draw_nvg_cursor(vg)
     
@@ -240,6 +261,13 @@ draw :: proc(vg : ^nvg.Context) {
         sdl.GetMouseState(&mouse_cvs.x, &mouse_cvs.y)
         _textline(vg, 10, &y, fmt.tprintf("wnd: {}", vec_i2f(mouse_cvs)))
         _textline(vg, 10, &y, fmt.tprintf("cvs: {}", canvas->wnd2cvs(vec_i2f(mouse_cvs))))
+
+        profiles := profile_collect()
+        y += 10
+        _textline(vg, 5, &y, "profile:")
+        for p in profiles {
+            _textline(vg, 15, &y, fmt.tprintf("{}: {}ms", p.name, time.duration_milliseconds(p.duration)))
+        }
     }
     
     nvg.Restore(vg)

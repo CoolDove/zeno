@@ -51,7 +51,8 @@ paintcurve_step :: #force_inline proc(using curve: ^PaintCurve, dt: f32) -> bool
     for t > lengths[idx] {
         idx += 1
         if auto_cast idx > len(lengths)-1 {
-            t = paintcurve_length(curve)
+            // t = paintcurve_length(curve)
+            t -= dt
             idx -= 1
             return false
         }

@@ -62,6 +62,8 @@ application_init :: proc(app : ^Application) {
     tween_system_init()
     tweener_init(&app.tweener, 4)
 
+    profile_init()
+
     time.stopwatch_start(&timer)
 
     _cursors_init()
@@ -78,6 +80,8 @@ application_release :: proc(app : ^Application) {
 
     /* Base */
     tweener_release(&app.tweener)
+    profile_release()
+
     nvggl.Destroy(app.vg)
     _cursors_release()
     sdl.DestroyWindow(app.wnd)
