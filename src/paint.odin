@@ -1,6 +1,9 @@
 package main
 
-@(private="file")
+import gl "vendor:OpenGL"
+import "dgl"
+
+// @(private="file")
 _paint : Paint
 
 Paint :: struct {
@@ -9,6 +12,9 @@ Paint :: struct {
     brush : u32,
     daps : [dynamic]Dap,
     activate : bool,
+
+    brush_texture_left, brush_texture_right : u32,
+
 }
 
 Dap :: struct {
@@ -22,11 +28,18 @@ paint_begin :: proc(canvas: ^Canvas, layer: ^Layer) {
     _paint.activate = true
     _paint.canvas = canvas
     _paint.layer = layer
+    using _paint
+
+    brush_texture_left, brush_texture_right = canvas_fetch_brush_texture(canvas)
 }
 paint_end :: proc() {
+    c := _paint.canvas 
+    dgl.blit(c.brush_tex_buffer, c.texid, c.width, c.height)
+
     _paint.activate = false
     _paint.canvas = nil
     _paint.layer = nil
+
     clear(&_paint.daps)
 }
 
@@ -42,7 +55,10 @@ paint_draw :: proc(n:int= -1) -> int {
     for i in 0..<n {
         d := _paint.daps[i]
         c := _paint.canvas
-        paint_dap_on_texture(c.texid, {auto_cast c.width, auto_cast c.height}, d)
+        using _paint
+        paint_dap_on_texture(c.brush_tex_buffer, brush_texture_left, {auto_cast c.width, auto_cast c.height}, d)
+        _paint.brush_texture_left, _paint.brush_texture_right = 
+            _paint.brush_texture_right, _paint.brush_texture_left 
     }
     clear(&_paint.daps)
     return 0

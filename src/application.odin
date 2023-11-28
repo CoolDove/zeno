@@ -50,6 +50,8 @@ application_init :: proc(app : ^Application) {
     sdl.GL_MakeCurrent(app_base.wnd, app_base.gl_ctx)
     gl.load_up_to(3, 3, sdl.gl_set_proc_address)
 
+    dgl.init()
+
     vg := nvggl.Create(nvggl.CreateFlags{.ANTI_ALIAS, .STENCIL_STROKES, .DEBUG})
     victor_regular := nvg.CreateFont(vg, "victor-regular", "./res/victor-regular.ttf")
     unifont := nvg.CreateFont(vg, "unifont", "./res/unifont.ttf")
@@ -83,6 +85,8 @@ application_release :: proc(app : ^Application) {
     profile_release()
 
     nvggl.Destroy(app.vg)
+
+    dgl.release()
     _cursors_release()
     sdl.DestroyWindow(app.wnd)
     sdl.Quit()

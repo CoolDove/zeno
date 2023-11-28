@@ -105,11 +105,9 @@ main :: proc() {
                 } else if paint_is_painting() {
                     points := app.paintcurve.raw_points
                     last := points[len(points)-1]
-                    smooth :f32= 0.8
-                    // paintcurve_append(&app.paintcurve, linalg.lerp(last.position, canvas->wnd2cvs(app.mouse_pos), 1-smooth), 1.0)
                     paintcurve_append(&app.paintcurve, canvas->wnd2cvs(app.mouse_pos), 1.0)
                     length := paintcurve_length(&app.paintcurve)
-                    for paintcurve_step(&app.paintcurve, 8.0) {
+                    for paintcurve_step(&app.paintcurve, 0.6 * cast(f32)app.brush_size) {
                         p,_ := paintcurve_get(&app.paintcurve)
                         paint_push_dap({p.position, 0, p.pressure * auto_cast app.brush_size})
                     }
@@ -123,6 +121,7 @@ main :: proc() {
             /* Flush painting daps */
             paint_draw(-1)
             
+            dgl.framebuffer_bind_default()
             gl.ClearColor(0.2,0.2,0.2,1.0)
             gl.Clear(gl.COLOR_BUFFER_BIT)
             gl.Viewport(0,0,auto_cast app.window_size.x,auto_cast app.window_size.y)
@@ -172,17 +171,45 @@ draw :: proc(vg : ^nvg.Context) {
         pos := canvas->cvs2wnd({0,0})
         cw := cast(f32)canvas.width*canvas.scale
         ch := cast(f32)canvas.height*canvas.scale
-        immediate_quad(
+        immediate_quad(// Shadow
             pos+{5,5},
             Vec2{cw, ch}, 
             {0.1,0.1,0.1,0.9})
-        immediate_texture(
+        if paint_is_painting() do immediate_texture(
+            pos,
+            Vec2{cw, ch}, 
+            {1,1,1,1}, 
+            canvas.brush_tex_buffer)
+        else do immediate_texture(
             pos,
             Vec2{cw, ch}, 
             {1,1,1,1}, 
             canvas.texid)
+        
+        {// Debug
+            immediate_texture(
+                {10, app.window_size.y - 210},
+                Vec2{150, 200}, 
+                {1,1,1,1}, 
+                canvas.texid)
+            immediate_texture(
+                {10+150+10, app.window_size.y - 210},
+                Vec2{150, 200}, 
+                {1,1,1,1}, 
+                canvas.texid)
+            immediate_texture(
+                {10+150+10+150+20, app.window_size.y - 210},
+                Vec2{150, 200}, 
+                {1,1,1,1}, 
+                _paint.brush_texture_left)
+            immediate_texture(
+                {10+150+10+150+20+150+10, app.window_size.y - 210},
+                Vec2{150, 200}, 
+                {1,1,1,1}, 
+                _paint.brush_texture_right)
+        }
     }
-    immediate_end(true)
+    immediate_end()
     profile_end()
     
     nvg.BeginFrame(vg, auto_cast w,auto_cast h, 1.0)
