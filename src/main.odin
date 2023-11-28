@@ -27,12 +27,6 @@ timer : time.Stopwatch
 
 app : Application
 
-StrokePoint :: struct {
-    pos : Vec2,
-    scale : f32,
-}
-strokes : [dynamic][dynamic]StrokePoint
-
 main :: proc() {
     application_init(&app)
     defer application_release(&app)
@@ -46,11 +40,6 @@ main :: proc() {
     defer canvas_release(&app.canvas)
 
     immediate_init(); defer immediate_release()
-
-    strokes = make([dynamic][dynamic]StrokePoint); defer {
-        for s in strokes do delete(s)
-        delete(strokes)
-    }
 
     quit : bool
     event : sdl.Event
@@ -71,7 +60,7 @@ main :: proc() {
                 app.window_size.x = auto_cast w
                 app.window_size.y = auto_cast h
                 if paint_is_painting() do paint_end()
-            case .KEYDOWN:   
+            case .KEYDOWN:
                 redraw_flag = true
             case .MOUSEWHEEL:
                 if (sdl.GetModState() & sdl.KMOD_LSHIFT) == {} {
@@ -94,9 +83,6 @@ main :: proc() {
                     cursor_set(.Dragger)
                 } else if event.button.button == sdl.BUTTON_LEFT {
                     // The paint
-                    append(&strokes, make([dynamic]StrokePoint))
-                    append(&strokes[len(strokes)-1], StrokePoint{app.mouse_pos, 1.0}) // Temporary draw
-
                     paintcurve_clear(&paintcurve)
                     paintcurve_append(&paintcurve, canvas->wnd2cvs(app.mouse_pos), 1.0)
                     paint_begin(&canvas, nil)
@@ -126,7 +112,6 @@ main :: proc() {
                     for paintcurve_step(&app.paintcurve, 8.0) {
                         p,_ := paintcurve_get(&app.paintcurve)
                         paint_push_dap({p.position, 0, p.pressure * auto_cast app.brush_size})
-                        append(&strokes[len(strokes)-1], StrokePoint{p.position, p.pressure * cast(f32)app.brush_size}) // Temporary draw
                     }
                     nodelay_flag = true
                 }
@@ -203,36 +188,6 @@ draw :: proc(vg : ^nvg.Context) {
     nvg.BeginFrame(vg, auto_cast w,auto_cast h, 1.0)
     nvg.Save(vg)
 
-    profile_begin("DrawStrokes")
-    // ## Draw paint strokes
-    for s in strokes {
-        // if len(s) < 2 do continue
-        // nvg.BeginPath(vg)
-        // nvg.LineCap(vg, .ROUND)
-        // nvg.LineJoin(vg, .ROUND)
-        // nvg.StrokeWidth(vg, s[0].scale * canvas.scale)
-        // nvg.StrokeColor(vg, {1, .2, .2, 0.8})
-        // start := canvas->cvs2wnd(s[0].pos)
-        // nvg.MoveTo(vg, start.x, start.y)
-        // for i in 1..<len(s) {
-        //     wpos := canvas->cvs2wnd(s[i].pos)
-        //     nvg.StrokeWidth(vg, s[i].scale * canvas.scale)
-        //     nvg.LineTo(vg, wpos.x, wpos.y)
-        // }
-        // FIXME: Dangerous, there might be a situation that you draw only two points, and they're
-        //  close for stupid nvg to recognize them as a closed path. Then nvg would delete one point
-        //  to make an `index out of range` error which is totally unnecessary.
-        // nvg.Stroke(vg)
-        // for p in s {
-        //     nvg.BeginPath(vg)
-        //     wpos := canvas->cvs2wnd(p.pos)
-        //     nvg.FillColor(vg, {0.4, 1.0, 0.2, 1.0})
-        //     nvg.Circle(vg, wpos.x, wpos.y, p.scale * canvas.scale * 0.5)
-        //     nvg.Fill(vg)
-        // }
-    }
-    profile_end()
-    
     draw_nvg_cursor(vg)
     
     nvg.BeginPath(vg)

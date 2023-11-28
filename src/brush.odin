@@ -14,11 +14,6 @@ paint_dap_on_texture :: proc(tex: u32, viewport_size : Vec2, dap: Dap) {
         quad = dgl.primitive_make_quad_a({1,0,0,1})
         fbo = dgl.framebuffer_create()
         _shaderv_brush_init(shader)
-        // fmt.printf("Initialized, shader: {}, quad: {}, fbo: {}", shader, quad, fbo)
-        // fmt.printf("shader uniform locations: {}-{}, {}-{}\n", 
-        //     "viewport_size", gl.GetUniformLocation(shader, "viewport_size"),
-        //     "dap_info", gl.GetUniformLocation(shader, "dap_info"),
-        // )
     }
 
     dgl.framebuffer_bind(fbo); defer dgl.framebuffer_bind_default()
