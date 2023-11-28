@@ -87,8 +87,8 @@ texture_load_by_path :: proc(path: string, gen_mipmap := false) -> Texture {
     target :u32= gl.TEXTURE_2D
     gl.TexParameteri(target, gl.TEXTURE_WRAP_S, gl.REPEAT)
     gl.TexParameteri(target, gl.TEXTURE_WRAP_T, gl.REPEAT)
-    gl.TexParameteri(target, gl.TEXTURE_MIN_FILTER, gl.LINEAR)
-    gl.TexParameteri(target, gl.TEXTURE_MAG_FILTER, gl.LINEAR)
+    gl.TexParameteri(target, gl.TEXTURE_MIN_FILTER, gl.NEAREST)
+    gl.TexParameteri(target, gl.TEXTURE_MAG_FILTER, gl.NEAREST)
 
     gl.TexImage2D(target, 0, gl.RGBA, img.size.x, img.size.y, 0, gl.RGBA, gl.UNSIGNED_BYTE, img.data)
     if gen_mipmap do gl.GenerateMipmap(target)
@@ -108,8 +108,8 @@ texture_create_with_color :: proc(width, height : int, color : [4]u8, gen_mipmap
     target :u32= gl.TEXTURE_2D
     gl.TexParameteri(target, gl.TEXTURE_WRAP_S, gl.REPEAT)
     gl.TexParameteri(target, gl.TEXTURE_WRAP_T, gl.REPEAT)
-    gl.TexParameteri(target, gl.TEXTURE_MIN_FILTER, gl.LINEAR)
-    gl.TexParameteri(target, gl.TEXTURE_MAG_FILTER, gl.LINEAR)
+    gl.TexParameteri(target, gl.TEXTURE_MIN_FILTER, gl.NEAREST)
+    gl.TexParameteri(target, gl.TEXTURE_MAG_FILTER, gl.NEAREST)
 
     data := make([dynamic][4]u8, 0, width * height)
     for i := 0; i < width * height; i += 1 {
@@ -129,8 +129,8 @@ texture_create_with_buffer :: proc(width, height : int, buffer : []u8, gen_mipma
     target :u32= gl.TEXTURE_2D
     gl.TexParameteri(target, gl.TEXTURE_WRAP_S, gl.REPEAT)
     gl.TexParameteri(target, gl.TEXTURE_WRAP_T, gl.REPEAT)
-    gl.TexParameteri(target, gl.TEXTURE_MIN_FILTER, gl.LINEAR)
-    gl.TexParameteri(target, gl.TEXTURE_MAG_FILTER, gl.LINEAR)
+    gl.TexParameteri(target, gl.TEXTURE_MIN_FILTER, gl.NEAREST)
+    gl.TexParameteri(target, gl.TEXTURE_MAG_FILTER, gl.NEAREST)
 
     gl.TexImage2D(target, 0, 4, cast(i32)width, cast(i32)height, 0, gl.RGBA, gl.UNSIGNED_BYTE, raw_data(buffer))
     if gen_mipmap do gl.GenerateMipmap(target)
