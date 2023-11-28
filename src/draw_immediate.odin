@@ -36,7 +36,7 @@ immediate_init :: proc() {
     gl.GenVertexArrays(1, &vao)
     basic_vert :: #load("./shaders/immediate_basic.vert", string)
     basic_frag :: #load("./shaders/immediate_basic.frag", string)
-    basic_shader = dgl.shader_load_from_sources(basic_vert, basic_frag).id
+    basic_shader = dgl.shader_load_from_sources(basic_vert, basic_frag)
     default_white_tex = dgl.texture_create_with_color(1,1, {255,255,255,255})
 }
 immediate_release :: proc() {

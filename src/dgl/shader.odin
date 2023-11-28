@@ -13,9 +13,7 @@ ShaderType :: enum u32 {
     GEOMETRY_SHADER        = gl.GEOMETRY_SHADER,
 }
 
-Shader :: struct {
-    id : u32,
-}
+ShaderId :: u32
 
 ShaderComponent :: struct {
     id : u32,
@@ -73,46 +71,47 @@ shader_destroy :: proc {
     shader_destroy_single,
     shader_destroy_multiple,
 }
-shader_destroy_single :: proc(using shader: ^Shader) {
-    gl.DeleteProgram(id)
+shader_destroy_single :: proc(shader: ShaderId) {
+    shader := shader
+    gl.DeleteProgram(shader)
 }
-shader_destroy_multiple :: proc(shaders: ..^Shader) {
+shader_destroy_multiple :: proc(shaders: ..ShaderId) {
     for sh in shaders {
-        gl.DeleteProgram(sh.id)
+        gl.DeleteProgram(sh)
     }
 }
 
-shader_create_from_components :: proc(comps: ..^ShaderComponent) -> Shader {
-    shader : Shader
-    shader.id = gl.CreateProgram()
+shader_create_from_components :: proc(comps: ..^ShaderComponent) -> ShaderId {
+    shader : ShaderId
+    shader = auto_cast gl.CreateProgram()
     for c in comps {
-        gl.AttachShader(shader.id, c.id)
+        gl.AttachShader(auto_cast shader, c.id)
     }
-    gl.LinkProgram(shader.id)
+    gl.LinkProgram(auto_cast shader)
 
     success : i32
 
-	gl.GetProgramiv(shader.id, gl.LINK_STATUS, &success)
+	gl.GetProgramiv(shader, gl.LINK_STATUS, &success)
 	if success == 0 {
 		info_length:i32
 		info_buf : [512]u8
-		gl.GetProgramInfoLog(shader.id, 512, &info_length, &info_buf[0]);
+		gl.GetProgramInfoLog(shader, 512, &info_length, &info_buf[0]);
 		log.debugf("DGL Error: Shader Linking Error: \n%s\n", info_buf)
-        return Shader{}
+        return 0
 	}
-
     return shader
 }
 
-shader_bind :: proc(using shader: ^Shader) {
-    if id == 0 {
+shader_bind :: proc(shader: ShaderId) {
+    shader := shader
+    if cast(u32)shader == 0 {
         log.error("DGL Error: Failed to bind shader, the shader is not correctly initialized!")
     } else {
-        gl.UseProgram(id)
+        gl.UseProgram(auto_cast shader)
     }
 }
 
-shader_load_from_sources :: proc(vertex_source, fragment_source : string) -> Shader {
+shader_load_from_sources :: proc(vertex_source, fragment_source : string) -> ShaderId {
 	shader_comp_vertex := shader_create_component(.VERTEX_SHADER, vertex_source)
 	shader_comp_fragment := shader_create_component(.FRAGMENT_SHADER, fragment_source)
 	shader := shader_create(&shader_comp_vertex, &shader_comp_fragment)

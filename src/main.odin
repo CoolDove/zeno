@@ -12,6 +12,8 @@ import "core:math/linalg"
 import "core:fmt"
 import "core:time"
 
+import "dgl"
+
 Record :: struct {
     text : cstring,
 }
@@ -93,7 +95,7 @@ main :: proc() {
                 } else if event.button.button == sdl.BUTTON_LEFT {
                     // The paint
                     append(&strokes, make([dynamic]StrokePoint))
-                    // append(&strokes[len(strokes)-1], StrokePoint{app.mouse_pos, 1.0}) // Temporary draw
+                    append(&strokes[len(strokes)-1], StrokePoint{app.mouse_pos, 1.0}) // Temporary draw
 
                     paintcurve_clear(&paintcurve)
                     paintcurve_append(&paintcurve, canvas->wnd2cvs(app.mouse_pos), 1.0)
@@ -123,7 +125,7 @@ main :: proc() {
                     length := paintcurve_length(&app.paintcurve)
                     for paintcurve_step(&app.paintcurve, 8.0) {
                         p,_ := paintcurve_get(&app.paintcurve)
-                        paint_push_dap({p.position, 0, p.pressure})
+                        paint_push_dap({p.position, 0, p.pressure * auto_cast app.brush_size})
                         append(&strokes[len(strokes)-1], StrokePoint{p.position, p.pressure * cast(f32)app.brush_size}) // Temporary draw
                     }
                     nodelay_flag = true
@@ -139,6 +141,7 @@ main :: proc() {
             gl.ClearColor(0.2,0.2,0.2,1.0)
             gl.Clear(gl.COLOR_BUFFER_BIT)
             gl.Viewport(0,0,auto_cast app.window_size.x,auto_cast app.window_size.y)
+            dgl.framebuffer_bind_default()
             draw(vg)
             redraw_flag = false
             app.frame_id += 1
@@ -194,7 +197,7 @@ draw :: proc(vg : ^nvg.Context) {
             {1,1,1,1}, 
             canvas.texid)
     }
-    immediate_end()
+    immediate_end(true)
     profile_end()
     
     nvg.BeginFrame(vg, auto_cast w,auto_cast h, 1.0)
@@ -203,33 +206,30 @@ draw :: proc(vg : ^nvg.Context) {
     profile_begin("DrawStrokes")
     // ## Draw paint strokes
     for s in strokes {
-        if len(s) < 2 do continue
-        nvg.BeginPath(vg)
-        nvg.LineCap(vg, .ROUND)
-        nvg.LineJoin(vg, .ROUND)
-        nvg.StrokeWidth(vg, s[0].scale * canvas.scale)
-        nvg.StrokeColor(vg, {1, .2, .2, 0.8})
-        start := canvas->cvs2wnd(s[0].pos)
-        nvg.MoveTo(vg, start.x, start.y)
-        for i in 1..<len(s) {
-            wpos := canvas->cvs2wnd(s[i].pos)
-            nvg.StrokeWidth(vg, s[i].scale * canvas.scale)
-            nvg.LineTo(vg, wpos.x, wpos.y)
-        }
+        // if len(s) < 2 do continue
+        // nvg.BeginPath(vg)
+        // nvg.LineCap(vg, .ROUND)
+        // nvg.LineJoin(vg, .ROUND)
+        // nvg.StrokeWidth(vg, s[0].scale * canvas.scale)
+        // nvg.StrokeColor(vg, {1, .2, .2, 0.8})
+        // start := canvas->cvs2wnd(s[0].pos)
+        // nvg.MoveTo(vg, start.x, start.y)
+        // for i in 1..<len(s) {
+        //     wpos := canvas->cvs2wnd(s[i].pos)
+        //     nvg.StrokeWidth(vg, s[i].scale * canvas.scale)
+        //     nvg.LineTo(vg, wpos.x, wpos.y)
+        // }
         // FIXME: Dangerous, there might be a situation that you draw only two points, and they're
         //  close for stupid nvg to recognize them as a closed path. Then nvg would delete one point
         //  to make an `index out of range` error which is totally unnecessary.
-        nvg.Stroke(vg)
-
-
-        for p in s {
-            nvg.BeginPath(vg)
-            wpos := canvas->cvs2wnd(p.pos)
-            nvg.FillColor(vg, {0.4, 1.0, 0.2, 1.0})
-            nvg.Circle(vg, wpos.x, wpos.y, p.scale * canvas.scale * 0.5)
-            nvg.Fill(vg)
-        }
-        
+        // nvg.Stroke(vg)
+        // for p in s {
+        //     nvg.BeginPath(vg)
+        //     wpos := canvas->cvs2wnd(p.pos)
+        //     nvg.FillColor(vg, {0.4, 1.0, 0.2, 1.0})
+        //     nvg.Circle(vg, wpos.x, wpos.y, p.scale * canvas.scale * 0.5)
+        //     nvg.Fill(vg)
+        // }
     }
     profile_end()
     
