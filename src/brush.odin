@@ -9,9 +9,11 @@ paint_dap_on_texture :: proc(target_tex, tex : u32, viewport_size : Vec2, dap: D
     @static quad : dgl.DrawPrimitive
     @static shader : dgl.ShaderId
     @static fbo : dgl.FramebufferId
+    @static mixbox_lut : u32
     if shader == 0 {
         fmt.printf("Initialize")
         shader = dgl.shader_load_from_sources(#load("./shaders/brush.vert"), #load("./shaders/brush.frag"))
+        mixbox_lut = dgl.texture_load_from_mem(#load("../res/mixbox_lut.png", []u8)).id
         quad = dgl.primitive_make_quad_a({1,0,0,0.5})
         fbo = dgl.framebuffer_create()
         _shaderv_brush_init(shader)
@@ -24,7 +26,7 @@ paint_dap_on_texture :: proc(target_tex, tex : u32, viewport_size : Vec2, dap: D
     dgl.shader_bind(shader)
     _shaderv_brush.uniform_viewport_size(viewport_size)
     _shaderv_brush.uniform_dap_info(dap.position, dap.scale, dap.angle)
-    _shaderv_brush.uniform_textures(tex)
+    _shaderv_brush.uniform_textures(tex, mixbox_lut)
     dgl.primitive_draw(&quad, shader)
 }
 
@@ -34,21 +36,22 @@ _SHADER_LOC_VIEWPORT_SIZE : i32
 _SHADER_LOC_DAP_INFO : i32
 @(private="file")
 _SHADER_LOC_MAIN_TEXTURE : i32
-// @(private="file") _SHADER_LOC_DST_TEXTURE : i32
+@(private="file")
+_SHADER_LOC_MIXBOX_LUT : i32
 
 @(private="file")
 _shaderv_brush_init :: proc(shader: u32) {
     _SHADER_LOC_VIEWPORT_SIZE = gl.GetUniformLocation(shader, "viewport_size")
     _SHADER_LOC_DAP_INFO = gl.GetUniformLocation(shader, "dap_info")
     _SHADER_LOC_MAIN_TEXTURE = gl.GetUniformLocation(shader, "main_texture")
-    // _SHADER_LOC_DST_TEXTURE = gl.GetUniformLocation(shader, "dst_texture")
+    _SHADER_LOC_MIXBOX_LUT = gl.GetUniformLocation(shader, "mixbox_lut")
 }
 
 @(private="file")
 ShaderVBrush :: struct {
     uniform_viewport_size : proc(size: Vec2),
     uniform_dap_info : proc(position: Vec2, scale, rotation : f32),
-    uniform_textures : proc(main_tex: u32),
+    uniform_textures : proc(main_tex, mixlut: u32),
 }
 
 @(private="file")
@@ -59,12 +62,12 @@ _shaderv_brush : ShaderVBrush= {
     uniform_dap_info = proc(position: Vec2, scale, rotation : f32) {
         gl.Uniform4f(_SHADER_LOC_DAP_INFO, position.x, position.y, scale, rotation)
     },
-    uniform_textures = proc(main_tex: u32) {
+    uniform_textures = proc(main_tex, mixlut: u32) {
         gl.ActiveTexture(gl.TEXTURE0)
         gl.BindTexture(gl.TEXTURE_2D, main_tex)
-        // gl.ActiveTexture(gl.TEXTURE1)
-        // gl.BindTexture(gl.TEXTURE_2D, dst)
+        gl.ActiveTexture(gl.TEXTURE1)
+        gl.BindTexture(gl.TEXTURE_2D, mixlut)
         gl.Uniform1i(_SHADER_LOC_MAIN_TEXTURE, 0)
-        // gl.Uniform1i(_SHADER_LOC_SRC_TEXTURE, 1)
+        gl.Uniform1i(_SHADER_LOC_MIXBOX_LUT, 1)
     }
 }

@@ -3,6 +3,7 @@ package dgl
 import gl "vendor:OpenGL"
 import "core:log"
 import "core:strings"
+import "core:fmt"
 
 ShaderType :: enum u32 {
     FRAGMENT_SHADER        = gl.FRAGMENT_SHADER,
@@ -40,7 +41,7 @@ shader_create_component :: proc (type : ShaderType, source : string) -> ShaderCo
 		shader_log_length:i32
 		info_buf : [512]u8
 		gl.GetShaderInfoLog(id, 512, &shader_log_length, &info_buf[0])
-		log.errorf("DGL: Shader ShaderComponent Compile Error: \n%s\n", info_buf);
+		fmt.printf("DGL: Shader ShaderComponent Compile Error: \n%s\n", info_buf);
         return ShaderComponent{}
 	}
     return shader
@@ -96,7 +97,7 @@ shader_create_from_components :: proc(comps: ..^ShaderComponent) -> ShaderId {
 		info_length:i32
 		info_buf : [512]u8
 		gl.GetProgramInfoLog(shader, 512, &info_length, &info_buf[0]);
-		log.debugf("DGL Error: Shader Linking Error: \n%s\n", info_buf)
+		fmt.printf("DGL Error: Shader Linking Error: \n%s\n", info_buf)
         return 0
 	}
     return shader
