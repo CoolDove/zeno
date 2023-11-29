@@ -18,6 +18,7 @@ Application :: struct {
     tweener : Tweener,
     canvas : Canvas,
     brush_size : i32,
+    brush_color : Vec4,
     paintcurve : PaintCurve,
 }
 
@@ -73,6 +74,7 @@ application_init :: proc(app : ^Application) {
 
     /* Application */
     app.brush_size = 5
+    app.brush_color = {1,1,0,1}
     paintcurve_init(&app.paintcurve)
 }
 
@@ -115,7 +117,7 @@ _CURSOR_DRAGGER : ^sdl.Cursor
 _cursors_init :: proc() {
     // _CURSOR_BRUSH = _cursor_create_brush_cross()
     _CURSOR_BRUSH = sdl.CreateSystemCursor(.CROSSHAIR)
-    _CURSOR_DRAGGER = sdl.CreateSystemCursor(.HAND)
+    _CURSOR_DRAGGER = sdl.CreateSystemCursor(.SIZEALL)
 }
 @(private="file")
 _cursors_release :: proc() {

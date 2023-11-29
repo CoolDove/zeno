@@ -27,6 +27,7 @@ paint_dap_on_texture :: proc(target_tex, tex : u32, viewport_size : Vec2, dap: D
     _shaderv_brush.uniform_viewport_size(viewport_size)
     _shaderv_brush.uniform_dap_info(dap.position, dap.scale, dap.angle)
     _shaderv_brush.uniform_textures(tex, mixbox_lut)
+    _shaderv_brush.uniform_color(app.brush_color)
     dgl.primitive_draw(&quad, shader)
 }
 
@@ -38,6 +39,8 @@ _SHADER_LOC_DAP_INFO : i32
 _SHADER_LOC_MAIN_TEXTURE : i32
 @(private="file")
 _SHADER_LOC_MIXBOX_LUT : i32
+@(private="file")
+_SHADER_LOC_BRUSH_COLOR : i32
 
 @(private="file")
 _shaderv_brush_init :: proc(shader: u32) {
@@ -45,6 +48,7 @@ _shaderv_brush_init :: proc(shader: u32) {
     _SHADER_LOC_DAP_INFO = gl.GetUniformLocation(shader, "dap_info")
     _SHADER_LOC_MAIN_TEXTURE = gl.GetUniformLocation(shader, "main_texture")
     _SHADER_LOC_MIXBOX_LUT = gl.GetUniformLocation(shader, "mixbox_lut")
+    _SHADER_LOC_BRUSH_COLOR = gl.GetUniformLocation(shader, "brush_color")
 }
 
 @(private="file")
@@ -52,6 +56,7 @@ ShaderVBrush :: struct {
     uniform_viewport_size : proc(size: Vec2),
     uniform_dap_info : proc(position: Vec2, scale, rotation : f32),
     uniform_textures : proc(main_tex, mixlut: u32),
+    uniform_color : proc(color: Vec4),
 }
 
 @(private="file")
@@ -69,5 +74,8 @@ _shaderv_brush : ShaderVBrush= {
         gl.BindTexture(gl.TEXTURE_2D, mixlut)
         gl.Uniform1i(_SHADER_LOC_MAIN_TEXTURE, 0)
         gl.Uniform1i(_SHADER_LOC_MIXBOX_LUT, 1)
+    },
+    uniform_color = proc(color : Vec4) {
+        gl.Uniform4f(_SHADER_LOC_BRUSH_COLOR, color.r,color.g,color.b,color.a)
     }
 }

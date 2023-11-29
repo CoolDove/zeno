@@ -62,6 +62,27 @@ main :: proc() {
                 if paint_is_painting() do paint_end()
             case .KEYDOWN:
                 redraw_flag = true
+                @static color := [6]Vec4 {
+                    {1,0,0,1},
+                    {0,1,0,1},
+                    {.1,.4,.8,1},
+                    {.9,0.8,0,1},
+                    {0,0,0,1},
+                    {1,1,1,1},
+                }
+                @static current := 0
+                key := event.key.keysym
+                if event.key.keysym.sym == .c {
+                    if sdl.KeymodFlag.LSHIFT in key.mod {
+                        app.brush_color.a = app.brush_color.a + 0.25
+                        if app.brush_color.a > 1 do app.brush_color.a -= 1
+                    } else {
+                        a := app.brush_color.a
+                        current = (current + 1) % len(color)
+                        app.brush_color = color[current]
+                        app.brush_color.a = a
+                    }
+                }
             case .MOUSEWHEEL:
                 if (sdl.GetModState() & sdl.KMOD_LSHIFT) == {} {
                     x,y : c.int
@@ -78,7 +99,7 @@ main :: proc() {
                 redraw_flag = true
             case .MOUSEBUTTONDOWN:
                 _app_update_mouse_position()
-                if event.button.button == sdl.BUTTON_RIGHT {
+                if event.button.button == sdl.BUTTON_MIDDLE {
                     dragging = true
                     cursor_set(.Dragger)
                 } else if event.button.button == sdl.BUTTON_LEFT {
@@ -91,7 +112,7 @@ main :: proc() {
                 }
             case .MOUSEBUTTONUP:
                 _app_update_mouse_position()
-                if event.button.button == sdl.BUTTON_RIGHT {
+                if event.button.button == sdl.BUTTON_MIDDLE {
                     dragging = false
                     cursor_set(.Default)
                 } else if event.button.button == sdl.BUTTON_LEFT {
@@ -185,6 +206,9 @@ draw :: proc(vg : ^nvg.Context) {
             Vec2{cw, ch}, 
             {1,1,1,1}, 
             canvas.texid)
+        
+        // immediate_quad(app.mouse_pos-{2,2}, {44,44}, {1,1,1,1})
+        immediate_quad(app.mouse_pos, {40,40}, app.brush_color)
         
         {// Debug
             immediate_texture(

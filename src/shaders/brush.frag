@@ -4,8 +4,8 @@ out vec4 FragColor;
 layout(location = 0) in vec2 _uv;
 layout(location = 1) in vec4 _color;
 
+uniform vec4 brush_color;
 uniform sampler2D main_texture;
-
 uniform sampler2D mixbox_lut;
 
 // ==========================================================
@@ -181,11 +181,12 @@ vec4 mixbox_lerp(vec4 color1, vec4 color2, float t)
 // +++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 void main() {
-    vec4 src = _color;
+    vec4 src = brush_color;
     vec4 dst = texture(main_texture, _uv);
-    // float outa = src.a + dst.a * (1 - src.a);
+    float outa = src.a + dst.a * (1 - src.a);
     // vec3 col = (src.rgb * src.a + dst.rgb * dst.a * (1 - src.a)) / outa;
     FragColor = mixbox_lerp(dst, src, src.a);
+    FragColor.a = outa;
     // FragColor = vec4(col, outa);
     // FragColor = src * 0.5 + dst * 0.5
 }
