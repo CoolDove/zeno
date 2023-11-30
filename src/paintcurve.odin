@@ -74,8 +74,9 @@ paintcurve_get :: proc(using curve: ^PaintCurve) -> (PaintCurvePoint, bool) {
     ld := lengths[idx-1]
     interp := (t - ld)/(l - ld)
     from, to := raw_points[idx-1], raw_points[idx]
-    angle := linalg.dot(Vec2{0,1}, linalg.normalize(to.position - from.position))
-    angle = linalg.acos(angle)
+
+    direction := linalg.normalize(to.position - from.position)
+    angle := linalg.atan2(direction.x, direction.y)
     last_sampled_angle = linalg.lerp(last_sampled_angle, angle, 0.8)
     return {
         linalg.lerp(from.position, to.position, interp), 
