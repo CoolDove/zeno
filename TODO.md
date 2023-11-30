@@ -1,0 +1,7 @@
+- [ ] Better brush
+    - [ ] Brush rotation
+- [ ] Layer system
+    - [ ] Layer blending, dirty blend
+- [ ] Widgets
+- [ ] Undo system
+- [ ] File Serialize

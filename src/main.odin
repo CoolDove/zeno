@@ -128,9 +128,9 @@ main :: proc() {
                     last := points[len(points)-1]
                     paintcurve_append(&app.paintcurve, canvas->wnd2cvs(app.mouse_pos), 1.0)
                     length := paintcurve_length(&app.paintcurve)
-                    for paintcurve_step(&app.paintcurve, 0.6 * cast(f32)app.brush_size) {
+                    for paintcurve_step(&app.paintcurve, 3.2 * cast(f32)app.brush_size) {
                         p,_ := paintcurve_get(&app.paintcurve)
-                        paint_push_dap({p.position, 0, p.pressure * auto_cast app.brush_size})
+                        paint_push_dap({p.position, p.angle, p.pressure * auto_cast app.brush_size})
                     }
                     nodelay_flag = true
                 }

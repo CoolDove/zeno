@@ -9,10 +9,13 @@ PaintCurve :: struct {
     lengths : [dynamic]f32,
     idx : i32,
     t : f32,
+
+    last_sampled_angle : f32,// Used to smooth the rotation.
 }
 PaintCurvePoint :: struct {
     position : Vec2,
     pressure : f32,
+    angle : f32,
 }
 
 paintcurve_init :: proc(using pcurve: ^PaintCurve) {
@@ -34,7 +37,7 @@ paintcurve_length :: proc(using pcurve: ^PaintCurve) -> f32 {
 }
 
 paintcurve_append :: proc(using curve: ^PaintCurve, pos: Vec2, pressure: f32) {
-    append(&raw_points, PaintCurvePoint{pos, pressure})
+    append(&raw_points, PaintCurvePoint{pos, pressure, 0})
     if len(lengths) > 0 {
         last := raw_points[len(raw_points)-2].position
         l := linalg.distance(pos, Vec2{last.x, last.y})
@@ -51,7 +54,6 @@ paintcurve_step :: #force_inline proc(using curve: ^PaintCurve, dt: f32) -> bool
     for t > lengths[idx] {
         idx += 1
         if auto_cast idx > len(lengths)-1 {
-            // t = paintcurve_length(curve)
             t -= dt
             idx -= 1
             return false
@@ -61,6 +63,7 @@ paintcurve_step :: #force_inline proc(using curve: ^PaintCurve, dt: f32) -> bool
 }
 
 paintcurve_get :: proc(using curve: ^PaintCurve) -> (PaintCurvePoint, bool) {
+    assert(len(raw_points) > 0, "PaintCurve: No points to sample.")
     if len(raw_points) == 0 {
         return {}, false
     } else {
@@ -71,7 +74,11 @@ paintcurve_get :: proc(using curve: ^PaintCurve) -> (PaintCurvePoint, bool) {
     ld := lengths[idx-1]
     interp := (t - ld)/(l - ld)
     from, to := raw_points[idx-1], raw_points[idx]
+    angle := linalg.dot(Vec2{0,1}, linalg.normalize(to.position - from.position))
+    angle = linalg.acos(angle)
+    last_sampled_angle = linalg.lerp(last_sampled_angle, angle, 0.8)
     return {
         linalg.lerp(from.position, to.position, interp), 
-        linalg.lerp(from.pressure, to.pressure, interp)}, true
+        linalg.lerp(from.pressure, to.pressure, interp),
+        last_sampled_angle}, true
 }
