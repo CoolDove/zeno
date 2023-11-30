@@ -207,31 +207,8 @@ draw :: proc(vg : ^nvg.Context) {
             {1,1,1,1}, 
             canvas.texid)
         
-        // immediate_quad(app.mouse_pos-{2,2}, {44,44}, {1,1,1,1})
-        immediate_quad(app.mouse_pos, {40,40}, app.brush_color)
-        
-        {// Debug
-            immediate_texture(
-                {10, app.window_size.y - 210},
-                Vec2{150, 200}, 
-                {1,1,1,1}, 
-                canvas.texid)
-            immediate_texture(
-                {10+150+10, app.window_size.y - 210},
-                Vec2{150, 200}, 
-                {1,1,1,1}, 
-                canvas.texid)
-            immediate_texture(
-                {10+150+10+150+20, app.window_size.y - 210},
-                Vec2{150, 200}, 
-                {1,1,1,1}, 
-                _paint.brush_texture_left)
-            immediate_texture(
-                {10+150+10+150+20+150+10, app.window_size.y - 210},
-                Vec2{150, 200}, 
-                {1,1,1,1}, 
-                _paint.brush_texture_right)
-        }
+        debug_draw_color_preview_quad({20, app.window_size.y-60}, {40,40}, app.brush_color)
+        // debug_draw_immediate_brush_buffers(canvas)
     }
     immediate_end()
     profile_end()
@@ -244,39 +221,7 @@ draw :: proc(vg : ^nvg.Context) {
     nvg.BeginPath(vg)
     nvg.FontSize(vg, 24)
 
-    _textline :: proc(vg: ^nvg.Context, x:f32, y: ^f32, msg: string) {
-        nvg.FillColor(vg, {0,0,0,.8})
-        nvg.Text(vg, x+1.2, y^+1.2, msg)
-        nvg.FillColor(vg, {.2,.8,.1,1.0})
-        nvg.Text(vg, x, y^, msg)
-        y^ = y^+30
-    }
-    {
-        profile_begin("DrawTexts")
-        y :f32= 25
-        _textline(vg, 5, &y, fmt.tprintf("FID: {}", app.frame_id))
-        _textline(vg, 5, &y, fmt.tprintf("No delay flag: {}", nodelay_flag))
-        y += 10
-        _textline(vg, 5, &y, fmt.tprintf("brush size: {}", app.brush_size))
-        y += 10
-        _textline(vg, 5, &y, "canvas:")
-        _textline(vg, 10, &y, fmt.tprintf("scale: {}", app.canvas.scale))
-        _textline(vg, 10, &y, fmt.tprintf("offset: {}", canvas.offset))
-        y += 10
-        _textline(vg, 5, &y, "mouse:")
-        mouse_cvs : Vec2i
-        sdl.GetMouseState(&mouse_cvs.x, &mouse_cvs.y)
-        _textline(vg, 10, &y, fmt.tprintf("wnd: {}", vec_i2f(mouse_cvs)))
-        _textline(vg, 10, &y, fmt.tprintf("cvs: {}", canvas->wnd2cvs(vec_i2f(mouse_cvs))))
-        profile_end()
-
-        profiles := profile_collect()
-        y += 10
-        _textline(vg, 5, &y, "profile:")
-        for p in profiles {
-            _textline(vg, 15, &y, fmt.tprintf("{}: {}ms", p.name, time.duration_milliseconds(p.duration)))
-        }
-    }
+    debug_draw_vg_informations(vg, canvas)
     
     nvg.Restore(vg)
     nvg.EndFrame(vg)

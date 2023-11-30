@@ -1,7 +1,11 @@
 - [ ] Better brush
-    - [ ] Brush rotation
+    - [x] Brush rotation
+    - [ ] After layer done
+    - [ ] Real brush implementation
+    - [ ] Brush shape
 - [ ] Layer system
-    - [ ] Layer blending, dirty blend
+    - [ ] Layer blending, dirty region
+- [ ] Tablet
 - [ ] Widgets
 - [ ] Undo system
 - [ ] File Serialize
