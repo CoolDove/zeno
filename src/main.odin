@@ -46,6 +46,8 @@ main :: proc() {
     for !quit {
         // states
         @static dragging := false
+        @static adjusting_brush_size := false
+        @static adjusting_brush_size_pin : Vec2
 
         if sdl.PollEvent(&event) {
             #partial switch event.type {
@@ -103,12 +105,17 @@ main :: proc() {
                     dragging = true
                     cursor_set(.Dragger)
                 } else if event.button.button == sdl.BUTTON_LEFT {
-                    // The paint
-                    paintcurve_clear(&paintcurve)
-                    paintcurve_append(&paintcurve, canvas->wnd2cvs(app.mouse_pos), 1.0)
-                    paint_begin(&canvas, nil)
+                    if sdl.KeymodFlag.LSHIFT in sdl.GetModState() {
+                        adjusting_brush_size = true
+                        adjusting_brush_size_pin = app.mouse_pos
+                    } else {
+                        // The paint
+                        paintcurve_clear(&paintcurve)
+                        paintcurve_append(&paintcurve, canvas->wnd2cvs(app.mouse_pos), 1.0)
+                        paint_begin(&canvas, nil)
 
-                    nodelay_flag = true
+                        nodelay_flag = true
+                    }
                 }
             case .MOUSEBUTTONUP:
                 _app_update_mouse_position()
@@ -116,13 +123,19 @@ main :: proc() {
                     dragging = false
                     cursor_set(.Default)
                 } else if event.button.button == sdl.BUTTON_LEFT {
-                    if paint_is_painting() do paint_end()
+                    if adjusting_brush_size {
+                        adjusting_brush_size = false
+                    } else if paint_is_painting() {
+                        paint_end()
+                    }
                 }
             case .MOUSEMOTION:
                 _app_update_mouse_position()
                 if dragging {
                     relative :Vec2i= {event.motion.xrel, event.motion.yrel}
                     app.canvas.offset += vec_i2f(relative)
+                } else if adjusting_brush_size {
+                    app.brush_size = auto_cast math.max(1, linalg.distance(app.mouse_pos, adjusting_brush_size_pin)/canvas.scale)
                 } else if paint_is_painting() {
                     points := app.paintcurve.raw_points
                     last := points[len(points)-1]

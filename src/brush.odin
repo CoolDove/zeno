@@ -11,7 +11,7 @@ paint_dap_on_texture :: proc(target_tex, tex : u32, viewport_size : Vec2, dap: D
     @static fbo : dgl.FramebufferId
     @static mixbox_lut : u32
     if shader == 0 {
-        fmt.printf("Initialize")
+        // fmt.printf("Initialize")
         shader = dgl.shader_load_from_sources(#load("./shaders/brush.vert"), #load("./shaders/brush.frag"))
         mixbox_lut = dgl.texture_load_from_mem(#load("../res/mixbox_lut.png", []u8)).id
         quad = dgl.primitive_make_quad_a({1,0,0,0.5})
