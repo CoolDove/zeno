@@ -54,9 +54,9 @@ application_init :: proc(app : ^Application) {
     dgl.init()
 
     vg := nvggl.Create(nvggl.CreateFlags{.ANTI_ALIAS, .STENCIL_STROKES, .DEBUG})
-    victor_regular := nvg.CreateFont(vg, "victor-regular", "./res/victor-regular.ttf")
-    unifont := nvg.CreateFont(vg, "unifont", "./res/unifont.ttf")
-    nvg.AddFallbackFontId(vg, victor_regular, unifont)
+    victor_regular := nvg.CreateFontMem(vg, "victor-regular", #load("../res/victor-regular.ttf", []u8), false)
+    // unifont := nvg.CreateFontMem(vg, "unifont", #load("../res/unifont.ttf", []u8), false)
+    nvg.AddFallbackFontId(vg, victor_regular, victor_regular)
     app_base.vg = vg
 
     // 
@@ -78,13 +78,15 @@ application_init :: proc(app : ^Application) {
 
     app.brush_size = 5
     app.brush_color = {1,1,0,1}
+    paint_init()
     paintcurve_init(&app.paintcurve)
-    layer_engine_init()
+    compose_engine_init()
 }
 
 application_release :: proc(app : ^Application) {
     /* Application */
-    layer_engine_release()
+    compose_engine_release()
+    paint_release()
     paintcurve_release(&app.paintcurve)
 
     /* Base */

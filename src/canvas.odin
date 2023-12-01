@@ -10,9 +10,10 @@ Canvas :: struct {
 
     width, height : i32,
 
+    current_layer : i32,
     layers : [dynamic]Layer,
 
-    layer_compose : LayerComposeData,
+    compose : CanvasComposeData,
 
     // Camera
     offset : Vec2,
@@ -29,6 +30,7 @@ Layer :: struct {
     tex : u32,
     transparency : f32,
     visible : bool,
+    compose_type : ComposeType,
 }
 
 canvas_init :: proc {

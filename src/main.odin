@@ -151,9 +151,13 @@ main :: proc() {
             }
         }
 
+        if paint_remained() > 0 do redraw_flag = true
+
         if redraw_flag {
             /* Flush painting daps */
-            paint_draw(-1)
+            profile_begin("Paint")
+            paint_draw(500)
+            profile_end()
             
             dgl.framebuffer_bind_default()
             gl.ClearColor(0.2,0.2,0.2,1.0)
