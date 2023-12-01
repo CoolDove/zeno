@@ -16,21 +16,13 @@ uniform_load :: proc(data : ^$T, shader: ShaderId) {
     offsets := reflect.struct_field_offsets(T)
 
     for i in 0..<len(names) {
-        if _is_valid_uniform_location_type(types[i].id) {
+        if types[i].id == typeid_of(UniformLoc) {
             name := names[i]
             loc := gl.GetUniformLocation(shader, strings.clone_to_cstring(name, context.temp_allocator))
             ptr := cast(^UniformLoc)(cast(uintptr)data + offsets[i])
             ptr^ = auto_cast loc
         }
     }
-}
-
-@(private="file")
-_is_valid_uniform_location_type :: proc(t: typeid) -> bool {
-    return t == typeid_of(UniformLoc) ||
-        t == typeid_of(UniformLocVec2) ||
-        t == typeid_of(UniformLocVec4) ||
-        t == typeid_of(UniformLocTexture)
 }
 
 uniform_set :: proc {
