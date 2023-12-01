@@ -112,9 +112,16 @@ shader_bind :: proc(shader: ShaderId) {
     }
 }
 
-shader_load_from_sources :: proc(vertex_source, fragment_source : string) -> ShaderId {
-	shader_comp_vertex := shader_create_component(.VERTEX_SHADER, vertex_source)
-	shader_comp_fragment := shader_create_component(.FRAGMENT_SHADER, fragment_source)
+shader_load_from_sources :: proc(vertex_source, fragment_source : string, preprocess:= false) -> ShaderId {
+    vert, frag := vertex_source, fragment_source
+    if preprocess {
+        vert, frag = shader_preprocess(vert), shader_preprocess(frag)
+    }
+    defer if preprocess {
+        delete(vert); delete(frag)
+    }
+	shader_comp_vertex := shader_create_component(.VERTEX_SHADER, vert)
+	shader_comp_fragment := shader_create_component(.FRAGMENT_SHADER, frag)
 	shader := shader_create(&shader_comp_vertex, &shader_comp_fragment)
 	shader_destroy_components(&shader_comp_vertex, &shader_comp_fragment)
 	return shader

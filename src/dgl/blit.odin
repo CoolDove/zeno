@@ -12,9 +12,29 @@ _SHADER_LOC_MAIN_TEXTURE : i32
 @(private="file")
 _blit_quad : DrawPrimitive
 
-blit :: proc(src, dst: u32, w,h: i32) {
+CustomBlitter :: struct {
+    prepare : proc(shader : ShaderId, src, dst: u32, w,h: i32),
+    shader : ShaderId,
+}
+
+// If you want to set some custom uniforms, you should manually bind the shader
+//  you're going to use before this process. And remember texture slot 0 has 
+//  been used.
+blit_with_shader :: proc(shader : ShaderId, main_texture_loc : i32, src, dst: u32, w,h: i32) {
+    framebuffer_bind(_blit_fbo)
+    framebuffer_attach_color(0, dst)
+
+    gl.Viewport(0,0, w,h)
+    shader_bind(shader)
+    gl.ActiveTexture(gl.TEXTURE0)
+    gl.BindTexture(gl.TEXTURE_2D, src)
+    gl.Uniform1i(main_texture_loc, 0)
+
+    primitive_draw(&_blit_quad, shader)
+}
+blit :: proc(src, dst: u32, w,h: i32) {// With default blit shader.
     if _blit_shader == 0 {
-        _blit_shader = shader_load_from_sources(_BLITTER_VERT, _BLITTER_FRAG)
+        _blit_shader = blit_make_blit_shader(_BLITTER_FRAG)
         _SHADER_LOC_MAIN_TEXTURE = gl.GetUniformLocation(_blit_shader, "main_texture")
         _blit_quad = primitive_make_quad_a({1,1,1,1})
         _blit_fbo = framebuffer_create()
@@ -24,17 +44,10 @@ blit :: proc(src, dst: u32, w,h: i32) {
             framebuffer_destroy(_blit_fbo)
         })
     }
-
-    framebuffer_bind(_blit_fbo)
-    framebuffer_attach_color(0, dst)
-
-    gl.Viewport(0,0, w,h)
-    shader_bind(_blit_shader)
-    gl.ActiveTexture(gl.TEXTURE0)
-    gl.BindTexture(gl.TEXTURE_2D, src)
-    gl.Uniform1i(_SHADER_LOC_MAIN_TEXTURE, 0)
-
-    primitive_draw(&_blit_quad, _blit_shader)
+    blit_with_shader(_blit_shader,_SHADER_LOC_MAIN_TEXTURE, src,dst, w,h)
+}
+blit_make_blit_shader :: proc(fragment_source : string) -> ShaderId {
+    return shader_load_from_sources(_BLITTER_VERT, fragment_source)
 }
 
 blit_clear :: proc(texture: u32, color: Vec4) {

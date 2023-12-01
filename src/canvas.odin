@@ -12,6 +12,8 @@ Canvas :: struct {
 
     layers : [dynamic]Layer,
 
+    layer_compose : LayerComposeData,
+
     // Camera
     offset : Vec2,
     scale : f32,

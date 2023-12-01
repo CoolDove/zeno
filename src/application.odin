@@ -73,13 +73,18 @@ application_init :: proc(app : ^Application) {
     cursor_set(.Default)
 
     /* Application */
+    // Load some shader libraries, systems would create shaders depending on these shader libs.
+    dgl.shader_preprocess_add_lib("mixbox", #load("./shaders/libs/mixbox.glsl", string))
+
     app.brush_size = 5
     app.brush_color = {1,1,0,1}
     paintcurve_init(&app.paintcurve)
+    layer_engine_init()
 }
 
 application_release :: proc(app : ^Application) {
     /* Application */
+    layer_engine_release()
     paintcurve_release(&app.paintcurve)
 
     /* Base */
