@@ -125,7 +125,7 @@ texture_create_with_color :: proc(width, height : int, color : [4]u8, gen_mipmap
     gl.TexParameteri(target, gl.TEXTURE_MIN_FILTER, gl.NEAREST)
     gl.TexParameteri(target, gl.TEXTURE_MAG_FILTER, gl.NEAREST)
 
-    data := make([dynamic][4]u8, 0, width * height)
+    data := make([dynamic][4]u8, 0, width * height); defer delete(data)
     for i := 0; i < width * height; i += 1 {
         append(&data, color)
     }
