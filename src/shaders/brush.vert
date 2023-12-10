@@ -23,9 +23,9 @@ void main()
 
     p = p * dap_info.z + vec2(dap_info.x, dap_info.y);
     p = p / viewport_size;
-	_uv = p;
     p = p * 2 - 1;
 
     gl_Position = vec4(p.x, p.y, 0, 1.0);
+	_uv = uv;
     _color = color;
 }

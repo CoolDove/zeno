@@ -73,10 +73,8 @@ paint_end :: proc() {
     c := _paint.canvas 
     w,h := c.width, c.height
 
-    // dgl.blit(c.compose.compose_brush, c.layers[c.current_layer].tex, c.width, c.height)
     gl.Disable(gl.BLEND)
     current_layer := &c.layers[c.current_layer]
-    dgl.blit_clear(c.buffer_left, {1,1,1,0}, w,h)
     dgl.blit(current_layer.tex, c.buffer_left, w,h)
     compose_pigment(c.compose.compose_brush, c.buffer_left, current_layer.tex, w,h)
     dgl.blit_clear(c.compose.compose_brush, {1,1,1,0}, w,h)
@@ -108,7 +106,7 @@ paint_draw :: proc(n:i32= -1) -> i32 {
         enable = true,
         src_rgb = gl.ONE,
         dst_rgb = gl.ZERO,
-        src_alpha = gl.ONE,
+        src_alpha = gl.SRC_ALPHA,
         dst_alpha = gl.ZERO,
         equation_rgb = gl.FUNC_ADD,
         equation_alpha = gl.MAX,
@@ -157,7 +155,6 @@ BrushUniforms :: struct {
     viewport_size : dgl.UniformLocVec2,
     dap_info : dgl.UniformLocVec4,
     brush_color : dgl.UniformLocVec4,
-    // main_texture, mixbox_lut : dgl.UniformLocTexture,
 }
 
 @(private="file")

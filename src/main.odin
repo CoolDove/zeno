@@ -106,6 +106,7 @@ main :: proc() {
                     if adjusting_brush_size {
                         adjusting_brush_size = false
                     } else if paint_is_painting() {
+                        paintcurve_append(&paintcurve, canvas->wnd2cvs(app.mouse_pos), 1.0)
                         paint_end()
                     }
                 }
@@ -136,7 +137,7 @@ main :: proc() {
         if redraw_flag {
             /* Flush painting daps */
             profile_begin("Paint")
-            paint_draw(500)
+            paint_draw(-1)
             profile_end()
             
             dgl.framebuffer_bind_default()
