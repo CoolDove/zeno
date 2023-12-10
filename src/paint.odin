@@ -39,11 +39,11 @@ paint_begin :: proc(canvas: ^Canvas, layer: ^Layer) {
     _paint.layer = layer
     using _paint
 
-    brush_texture_left, brush_texture_right = canvas_fetch_brush_texture(canvas)
+    // brush_texture_left, brush_texture_right = canvas_fetch_brush_texture(canvas)
 }
 paint_end :: proc() {
     c := _paint.canvas 
-    dgl.blit(c.brush_tex_buffer, c.texid, c.width, c.height)
+    // dgl.blit(c.brush_tex_buffer, c.texid, c.width, c.height)
 
     _paint.activate = false
     _paint.canvas = nil
@@ -67,7 +67,7 @@ paint_draw :: proc(n:i32= -1) -> i32 {
         d := _paint.daps[_paint.current_dap]
         c := _paint.canvas
         using _paint
-        paint_dap_on_texture(c.brush_tex_buffer, brush_texture_left, {auto_cast c.width, auto_cast c.height}, d)
+        // paint_dap_on_texture(c.brush_tex_buffer, brush_texture_left, {auto_cast c.width, auto_cast c.height}, d)
         _paint.brush_texture_left, _paint.brush_texture_right = 
             _paint.brush_texture_right, _paint.brush_texture_left 
         _paint.current_dap += 1

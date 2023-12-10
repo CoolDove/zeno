@@ -2,17 +2,34 @@ package main
 
 import "core:fmt"
 import gl "vendor:OpenGL"
+import nvg "vendor:nanovg"
 
 import "dgl"
 
 SHADER_COMPOSE_DEFAULT : dgl.ShaderId
 SHADER_COMPOSE_PIGMENT : dgl.ShaderId
+
+ComposeEngine :: struct {
+    fbo : dgl.FramebufferId,
+}
+
+@(private="file")
+_compose_engine : ComposeEngine
+
+
 @(private="file")
 _PigmentComposeUniforms :: struct {
-    main_texture, other_texture, mixbox_lut : dgl.UniformLocTexture,
+    src_texture, dst_texture, mixbox_lut : dgl.UniformLocTexture,
 }
 @(private="file")
 _pigment_compose_uniforms : _PigmentComposeUniforms
+
+@(private="file")
+_DefaultComposeUniforms :: struct {
+    src_texture, dst_texture : dgl.UniformLocTexture,
+}
+@(private="file")
+_default_compose_uniforms : _DefaultComposeUniforms
 
 // This is stored in canvas.
 CanvasComposeData :: struct {
@@ -26,15 +43,23 @@ ComposeType :: enum {
 }
 
 compose_engine_init :: proc() {
-    shader_frag := dgl.shader_preprocess(_SHADER_COMPOSE_PIGMENT_FRAG); defer delete(shader_frag)
-    SHADER_COMPOSE_DEFAULT = dgl.blit_make_blit_shader(shader_frag)
+    _compose_engine.fbo = dgl.framebuffer_create()
+    {// Pigment
+        shader_frag := dgl.shader_preprocess(_SHADER_COMPOSE_PIGMENT_FRAG); defer delete(shader_frag)
+        SHADER_COMPOSE_PIGMENT = dgl.blit_make_blit_shader(shader_frag)
+    }
+    {// Default
+        shader_frag := dgl.shader_preprocess(_SHADER_COMPOSE_DEFAULT_FRAG); defer delete(shader_frag)
+        SHADER_COMPOSE_DEFAULT = dgl.blit_make_blit_shader(shader_frag)
+    }
 
-    SHADER_COMPOSE_PIGMENT = dgl.blit_make_blit_shader(shader_frag)
     dgl.uniform_load(&_pigment_compose_uniforms, SHADER_COMPOSE_PIGMENT)
+    dgl.uniform_load(&_default_compose_uniforms, SHADER_COMPOSE_DEFAULT)
 }
 compose_engine_release :: proc() {
     gl.DeleteProgram(SHADER_COMPOSE_DEFAULT)
     gl.DeleteProgram(SHADER_COMPOSE_PIGMENT)
+    dgl.framebuffer_destroy(_compose_engine.fbo)
 }
 
 compose_engine_init_canvas :: proc(using canvas: ^Canvas) {
@@ -51,6 +76,23 @@ compose_engine_release_canvas :: proc(using canvas: ^Canvas) {
 }
 
 compose_engine_compose_all :: proc(using canvas: ^Canvas) {
+    using dgl
+    rem_viewport := state_get_viewport(); defer state_set_viewport(rem_viewport)
+    rem_fbo := framebuffer_current(); defer framebuffer_bind(rem_fbo)
+
+    comp := &canvas.compose
+    framebuffer_bind(_compose_engine.fbo)
+    gl.Viewport(0,0,width,height)
+    shader_bind(SHADER_COMPOSE_DEFAULT)
+    bl, br := canvas_get_clean_buffers(canvas, {1,1,1,0})
+    for l, idx in canvas.layers {
+        framebuffer_attach_color(0, br)
+        uniform_set_texture(_default_compose_uniforms.src_texture, l.tex, 0)
+        uniform_set_texture(_default_compose_uniforms.dst_texture, bl, 1)
+        blit_draw_unit_quad(SHADER_COMPOSE_DEFAULT)
+        bl, br = br, bl
+    }
+    blit(bl, canvas.compose.compose_result, width, height)
 }
 compose_engine_compose_dirty :: proc(using canvas: ^Canvas) {
 }
@@ -64,15 +106,37 @@ out vec4 FragColor;
 layout(location = 0) in vec2 _uv;
 layout(location = 1) in vec4 _color;
 
-uniform sampler2D main_texture;
-uniform sampler2D other_texture;
+uniform sampler2D src_texture;
+uniform sampler2D dst_texture;
 uniform sampler2D mixbox_lut;
 
 #include "mixbox"
 
 void main() {
-    vec4 src = texture(main_texture, _uv);
-    vec4 dst = texture(other_texture, _uv);
+    vec4 src = texture(src_texture, _uv);
+    vec4 dst = texture(dst_texture, _uv);
     FragColor = mixbox_lerp(dst, src, src.a);
+}
+`
+
+@(private="file")
+_SHADER_COMPOSE_DEFAULT_FRAG :string: `
+#version 440 core
+out vec4 FragColor;
+
+layout(location = 0) in vec2 _uv;
+layout(location = 1) in vec4 _color;
+
+uniform sampler2D src_texture;
+uniform sampler2D dst_texture;
+
+void main() {
+    vec4 src = texture(src_texture, _uv);
+    vec4 dst = texture(dst_texture, _uv);
+
+    float outa = src.a + dst.a * (1 - src.a);
+    vec3 col = (src.rgb * src.a + dst.rgb * dst.a * (1 - src.a)) / outa;
+
+    FragColor = vec4(col.r, col.g, col.b, outa);
 }
 `

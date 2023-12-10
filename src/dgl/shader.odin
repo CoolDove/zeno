@@ -112,6 +112,12 @@ shader_bind :: proc(shader: ShaderId) {
     }
 }
 
+shader_current :: proc() -> ShaderId {
+    id : i32
+    gl.GetIntegerv(gl.CURRENT_PROGRAM, &id)
+    return cast(u32)id
+}
+
 shader_load_from_sources :: proc(vertex_source, fragment_source : string, preprocess:= false) -> ShaderId {
     vert, frag := vertex_source, fragment_source
     if preprocess {

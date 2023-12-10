@@ -64,27 +64,7 @@ main :: proc() {
                 if paint_is_painting() do paint_end()
             case .KEYDOWN:
                 redraw_flag = true
-                @static color := [6]Vec4 {
-                    {1,0,0,1},
-                    {0,1,0,1},
-                    {.1,.4,.8,1},
-                    {.9,0.8,0,1},
-                    {0,0,0,1},
-                    {1,1,1,1},
-                }
-                @static current := 0
-                key := event.key.keysym
-                if event.key.keysym.sym == .c {
-                    if sdl.KeymodFlag.LSHIFT in key.mod {
-                        app.brush_color.a = app.brush_color.a + 0.25
-                        if app.brush_color.a > 1 do app.brush_color.a -= 1
-                    } else {
-                        a := app.brush_color.a
-                        current = (current + 1) % len(color)
-                        app.brush_color = color[current]
-                        app.brush_color.a = a
-                    }
-                }
+                on_key(event.key.keysym)
             case .MOUSEWHEEL:
                 if (sdl.GetModState() & sdl.KMOD_LSHIFT) == {} {
                     x,y : c.int
@@ -203,7 +183,13 @@ draw :: proc(vg : ^nvg.Context) {
     canvas := &app.canvas
     w, h := app.window_size.x,app.window_size.y
 
+    
+    profile_begin("Compose")
+    compose_engine_compose_all(canvas)
+    profile_end()
+
     profile_begin("DrawCanvas")
+    dgl.framebuffer_bind_default()
     immediate_begin({0,0, auto_cast w, auto_cast h})
     {
         pos := canvas->cvs2wnd({0,0})
@@ -213,16 +199,21 @@ draw :: proc(vg : ^nvg.Context) {
             pos+{5,5},
             Vec2{cw, ch}, 
             {0.1,0.1,0.1,0.9})
-        if paint_is_painting() do immediate_texture(
+        // if paint_is_painting() do immediate_texture(
+        //     pos,
+        //     Vec2{cw, ch}, 
+        //     {1,1,1,1}, 
+        //     canvas.brush_tex_buffer)
+        // else do immediate_texture(
+        //     pos,
+        //     Vec2{cw, ch}, 
+        //     {1,1,1,1}, 
+        //     canvas.texid)
+        immediate_texture(
             pos,
-            Vec2{cw, ch}, 
-            {1,1,1,1}, 
-            canvas.brush_tex_buffer)
-        else do immediate_texture(
-            pos,
-            Vec2{cw, ch}, 
-            {1,1,1,1}, 
-            canvas.texid)
+            Vec2{cw,ch},
+            {1,1,1,1},
+            canvas.compose.compose_result)
         
         debug_draw_color_preview_quad({20, app.window_size.y-60}, {40,40}, app.brush_color)
         // debug_draw_immediate_brush_buffers(canvas)
@@ -253,4 +244,37 @@ draw_nvg_cursor :: proc(vg: ^nvg.Context) {
     nvg.StrokeColor(vg, {0,0,0,1})
     nvg.Circle(vg, auto_cast x, auto_cast y, cast(f32)app.brush_size * app.canvas.scale)
     nvg.Stroke(vg)
+}
+
+on_key :: proc(key : sdl.Keysym) {
+    if key.sym == .c {
+        if sdl.KeymodFlag.LSHIFT in key.mod {
+            color_switch(true)
+        } else {
+            color_switch(false)
+        }
+    } else if key.sym == .k {
+        canvas_add_layer(&app.canvas, layer_create_with_color(&app.canvas, {255,255,60,120}))
+    }
+}
+
+color_switch :: proc(alpha: bool) {
+    @static color := [6]Vec4 {
+        {1,0,0,1},
+        {0,1,0,1},
+        {.1,.4,.8,1},
+        {.9,0.8,0,1},
+        {0,0,0,1},
+        {1,1,1,1},
+    }
+    @static current := 0
+    if alpha {
+        app.brush_color.a = app.brush_color.a + 0.25
+        if app.brush_color.a > 1 do app.brush_color.a -= 1
+    } else {
+        a := app.brush_color.a
+        current = (current + 1) % len(color)
+        app.brush_color = color[current]
+        app.brush_color.a = a
+    }
 }

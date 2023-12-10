@@ -7,26 +7,26 @@ import "core:time"
 
 debug_draw_immediate_brush_buffers :: proc(canvas: ^Canvas) {
     // Debug
-    immediate_texture(
-        {10, app.window_size.y - 210},
-        Vec2{150, 200}, 
-        {1,1,1,1}, 
-        canvas.texid)
-    immediate_texture(
-        {10+150+10, app.window_size.y - 210},
-        Vec2{150, 200}, 
-        {1,1,1,1}, 
-        canvas.texid)
-    immediate_texture(
-        {10+150+10+150+20, app.window_size.y - 210},
-        Vec2{150, 200}, 
-        {1,1,1,1}, 
-        _paint.brush_texture_left)
-    immediate_texture(
-        {10+150+10+150+20+150+10, app.window_size.y - 210},
-        Vec2{150, 200}, 
-        {1,1,1,1}, 
-        _paint.brush_texture_right)
+    // immediate_texture(
+    //     {10, app.window_size.y - 210},
+    //     Vec2{150, 200}, 
+    //     {1,1,1,1}, 
+    //     canvas.texid)
+    // immediate_texture(
+    //     {10+150+10, app.window_size.y - 210},
+    //     Vec2{150, 200}, 
+    //     {1,1,1,1}, 
+    //     canvas.texid)
+    // immediate_texture(
+    //     {10+150+10+150+20, app.window_size.y - 210},
+    //     Vec2{150, 200}, 
+    //     {1,1,1,1}, 
+    //     _paint.brush_texture_left)
+    // immediate_texture(
+    //     {10+150+10+150+20+150+10, app.window_size.y - 210},
+    //     Vec2{150, 200}, 
+    //     {1,1,1,1}, 
+    //     _paint.brush_texture_right)
 }
 
 debug_draw_vg_informations :: proc(vg : ^nvg.Context, canvas: ^Canvas) {

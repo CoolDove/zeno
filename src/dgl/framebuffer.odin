@@ -14,6 +14,13 @@ framebuffer_destroy :: proc(fbo : FramebufferId) {
     gl.DeleteFramebuffers(1, auto_cast &fbo)
 }
 
+framebuffer_current :: proc() -> FramebufferId {
+    current : i32
+    gl.GetIntegerv(gl.DRAW_FRAMEBUFFER_BINDING, &current)
+    assert(current != -1)
+    return auto_cast (cast(u32)current)
+}
+
 framebuffer_bind_default :: proc() {
     gl.BindFramebuffer(gl.FRAMEBUFFER, 0)
 }
