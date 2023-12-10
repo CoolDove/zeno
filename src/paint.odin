@@ -1,5 +1,7 @@
 package main
 
+import "core:math/linalg"
+import "core:math"
 import "core:fmt"
 import gl "vendor:OpenGL"
 import "dgl"
@@ -15,6 +17,7 @@ Paint :: struct {
     current_dap : i32,
     daps : [dynamic]Dap,
     activate : bool,
+    dirty_rect : Vec4,
 
     brush_texture : u32,
 
@@ -49,6 +52,7 @@ paint_init :: proc() {
             #load("./shaders/brush.frag"), true)
         dgl.uniform_load(&_paint.uniforms_brush_shader_default, _paint.brush_shader_default)
     }
+    _paint.dirty_rect = {}
 }
 paint_release :: proc() {
     dgl.shader_destroy(_paint.brush_shader_default)
@@ -64,6 +68,7 @@ paint_begin :: proc(canvas: ^Canvas, layer: ^Layer) {
     _paint.activate = true
     _paint.canvas = canvas
     _paint.layer = layer
+    _paint.dirty_rect = {}
     using _paint
 
     brush_texture = canvas.compose.compose_brush
@@ -72,6 +77,10 @@ paint_begin :: proc(canvas: ^Canvas, layer: ^Layer) {
 paint_end :: proc() {
     c := _paint.canvas 
     w,h := c.width, c.height
+
+    // history_push(&_paint.canvas.history, zmd_modify_layer(
+    //     _paint.layer, 
+    // ))
 
     gl.Disable(gl.BLEND)
     current_layer := &c.layers[c.current_layer]
@@ -90,6 +99,25 @@ paint_end :: proc() {
 
 paint_push_dap :: proc(dap: Dap) {
     append(&_paint.daps, dap)
+
+    r := &_paint.dirty_rect
+    u := dap.scale * 2.4
+    min := dap.position - 0.5*{u,u}
+    max := min + {u,u}
+    if r.z == 0 {
+        r^= {min.x,min.y, u,u}
+    } else {
+        if min.x < r.x {
+            r.z += r.x-min.x
+            r.x = min.x
+        }
+        if min.y < r.y {
+            r.w += r.y-min.y
+            r.y = min.y
+        }
+        if max.x > r.x+r.z do r.z = math.max(max.x - r.x, r.z)
+        if max.y > r.y+r.w do r.w = math.max(max.y - r.y, r.w)
+    }
 }
 
 // Draw n daps, and return how many daps remained, n==-1 means draw all daps.

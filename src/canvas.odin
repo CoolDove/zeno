@@ -12,6 +12,8 @@ Canvas :: struct {
     compose : CanvasComposeData,
     dirty_region : Vec4,// x,y(left-top) w,h
 
+    history: HistoryContext,
+
     // Camera
     offset : Vec2,
     scale : f32,
@@ -20,6 +22,7 @@ Canvas :: struct {
     // Brush
     buffer_left : u32,// Used during composing.
     buffer_right : u32,// Used during composing.
+
 }
 
 Layer :: struct {
@@ -37,18 +40,8 @@ canvas_init :: proc {
 canvas_init_with_file :: proc(canvas: ^Canvas, filename: string) -> bool {
     tex := dgl.texture_load_by_path(filename, false)
     if tex.id == 0 do return false
-
-    canvas.width = tex.size.x
-    canvas.height = tex.size.y
-
-    canvas.scale = 1
-    canvas.coord = &canvas_coord
-
     canvas_add_layer(canvas, layer_create_with_texture(tex.id))
-
-    _canvas_init_brush_texture(canvas)
-    compose_engine_init_canvas(canvas)
-    compose_engine_compose_all(canvas)
+    _canvas_init(canvas, tex.size.x, tex.size.y)
     return true
 }
 canvas_init_with_color :: proc(canvas: ^Canvas, width,height: i32, color : Color32) {
@@ -56,25 +49,26 @@ canvas_init_with_color :: proc(canvas: ^Canvas, width,height: i32, color : Color
     for i in 0..<(width * height) {
         for c in 0..<4 do data[cast(int)i*4+c] = color[c]
     }
-    canvas.width, canvas.height = width, height
-    
-    canvas.scale = 1
-    canvas.coord = &canvas_coord
-
-    canvas_add_layer(canvas, layer_create_with_color(canvas, color))
-
-    _canvas_init_brush_texture(canvas)
-    compose_engine_init_canvas(canvas)
-    compose_engine_compose_all(canvas)
+    canvas_add_layer(canvas, layer_create_with_color(width,height, color))
+    _canvas_init(canvas, width,height)
 }
 
 @(private="file")
-_canvas_init_brush_texture :: proc(using canvas: ^Canvas) {
-    buffer_left = dgl.texture_create_empty(auto_cast canvas.width, auto_cast canvas.height)
-    buffer_right = dgl.texture_create_empty(auto_cast canvas.width, auto_cast canvas.height)
+_canvas_init :: proc(canvas: ^Canvas, width,height: i32) {
+    canvas.width = width
+    canvas.height = height
+    canvas.scale = 1
+    canvas.coord = &canvas_coord
+    w,h :int= auto_cast canvas.width, auto_cast canvas.height
+    canvas.buffer_left = dgl.texture_create_empty(w,h)
+    canvas.buffer_right = dgl.texture_create_empty(w,h)
+    compose_engine_init_canvas(canvas)
+    compose_engine_compose_all(canvas)
+    history_init(&canvas.history, canvas)
 }
 
 canvas_release :: proc(using canvas: ^Canvas) {
+    history_release(&canvas.history)
     compose_engine_release_canvas(canvas)
     gl.DeleteTextures(1, &buffer_left)
     gl.DeleteTextures(1, &buffer_right)
@@ -96,7 +90,7 @@ canvas_add_layer :: proc(using canvas: ^Canvas, layer : Layer) {
 layer_create :: proc() -> Layer {
     return {}
 }
-layer_create_with_color :: proc(using canvas : ^Canvas, color: Color32) -> (Layer, bool) #optional_ok {
+layer_create_with_color :: proc(width, height : i32, color: Color32) -> (Layer, bool) #optional_ok {
     layer : Layer; _layer_default(&layer)
     layer.tex = dgl.texture_create_with_color(auto_cast width, auto_cast height, color)
     return layer, false

@@ -5,7 +5,7 @@ import "core:math"
 import "core:fmt"
 
 PaintCurve :: struct {
-    raw_points : [dynamic]PaintCurvePoint,// xy:position, z:pressure
+    raw_points : [dynamic]PaintCurvePoint,
     lengths : [dynamic]f32,
     idx : i32,
     t : f32,

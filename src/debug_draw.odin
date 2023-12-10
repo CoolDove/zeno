@@ -49,7 +49,26 @@ debug_draw_immediate_layers :: proc(vg : ^nvg.Context, canvas: ^Canvas, rect: Ve
     }
 }
 
+debug_draw_color_preview_quad :: proc(pos, size: Vec2, color: Vec4) {
+    hs := 0.5 * size
+    ca := Vec4{.4,.4,.4,1.0}
+    cb := Vec4{.8,.8,.8,1.0}
+
+    immediate_quad(pos-{2,2}, size+{4,4}, {.1,.1,.1,1.0})
+
+    immediate_quad(pos, hs, ca)
+    immediate_quad(pos+{hs.x,0}, hs, cb)
+    immediate_quad(pos+{0,hs.y}, hs, cb)
+    immediate_quad(pos+hs, hs, ca)
+
+    immediate_quad(pos, size, color)
+    c := color
+    c.a = 1.0
+    immediate_quad(pos+hs*0.5, hs, c)
+}
+
 debug_draw_vg_informations :: proc(vg : ^nvg.Context, canvas: ^Canvas) {
+    nvg.FontSize(vg, 24)
     _textline :: proc(vg: ^nvg.Context, x:f32, y: ^f32, msg: string) {
         nvg.FillColor(vg, {0,0,0,.8})
         nvg.Text(vg, x+1.2, y^+1.2, msg)
@@ -85,21 +104,54 @@ debug_draw_vg_informations :: proc(vg : ^nvg.Context, canvas: ^Canvas) {
     }
 }
 
+debug_draw_vg_dirty_rect :: proc(vg: ^nvg.Context, color: Vec4) {
 
-debug_draw_color_preview_quad :: proc(pos, size: Vec2, color: Vec4) {
-    hs := 0.5 * size
-    ca := Vec4{.4,.4,.4,1.0}
-    cb := Vec4{.8,.8,.8,1.0}
+    if !paint_is_painting() do return
 
-    immediate_quad(pos-{2,2}, size+{4,4}, {.1,.1,.1,1.0})
+    r := _paint.dirty_rect
+    c := _paint.canvas
 
-    immediate_quad(pos, hs, ca)
-    immediate_quad(pos+{hs.x,0}, hs, cb)
-    immediate_quad(pos+{0,hs.y}, hs, cb)
-    immediate_quad(pos+hs, hs, ca)
+    _debug_draw_canvas_rect(vg, c, r.x,r.y, r.z,r.w, color)
+    // color :Vec4= {1,0,0,1}
+    // x,y := r.x,r.y
+    // w,h := r.z,r.w
+    // point_on_canvas(vg, c, {x,y}, 5, color)
+    // point_on_canvas(vg, c, {x+w,y}, 5, color)
+    // point_on_canvas(vg, c, {x,y+h}, 5, color)
+    // point_on_canvas(vg, c, {x+w,y+h}, 5, color)
+}
 
-    immediate_quad(pos, size, color)
-    c := color
-    c.a = 1.0
-    immediate_quad(pos+hs*0.5, hs, c)
+point_on_canvas :: proc(vg: ^nvg.Context, c: ^Canvas, pos: Vec2, r: f32, color: Vec4) {
+    pos := c->cvs2wnd(pos)
+    nvg.BeginPath(vg)
+    nvg.Circle(vg, pos.x,pos.y, r)
+    nvg.FillColor(vg, auto_cast color)
+    nvg.Fill(vg)
+}
+
+
+_debug_draw_canvas_rect :: proc(vg: ^nvg.Context, c: ^Canvas, x,y,w,h: f32, color: Vec4) {
+    min :Vec2= {x, y}
+    max :Vec2= min+{w,h}
+
+    pa := min
+    pb :Vec2= {x+w,y}
+    pc := max
+    pd :Vec2= {x,y+h}
+
+    pa = c->cvs2wnd(pa)
+    pb = c->cvs2wnd(pb)
+    pc = c->cvs2wnd(pc)
+    pd = c->cvs2wnd(pd)
+
+    if pb.x-pa.x > 5 && pc.y-pa.y > 5 {
+        nvg.BeginPath(vg)
+        nvg.MoveTo(vg, pa.x,pa.y)
+        nvg.LineTo(vg, pb.x,pb.y)
+        nvg.LineTo(vg, pc.x,pc.y)
+        nvg.LineTo(vg, pd.x,pd.y)
+        nvg.LineTo(vg, pa.x,pa.y)
+        nvg.StrokeColor(vg, auto_cast color)
+        nvg.Stroke(vg)
+    }
 }

@@ -228,9 +228,8 @@ draw :: proc(vg : ^nvg.Context) {
     nvg.Save(vg)
 
     draw_nvg_cursor(vg)
-    
-    nvg.BeginPath(vg)
-    nvg.FontSize(vg, 24)
+
+    debug_draw_vg_dirty_rect(vg, {1,0,0,1})
 
     debug_draw_vg_informations(vg, canvas)
     
@@ -257,7 +256,7 @@ on_key :: proc(key : sdl.Keysym) {
             color_switch(false)
         }
     } else if key.sym == .n {
-        canvas_add_layer(&app.canvas, layer_create_with_color(&app.canvas, {255,255,255,0}))
+        canvas_add_layer(&app.canvas, layer_create_with_color(app.canvas.width, app.canvas.height, {255,255,255,0}))
     } else if key.sym == .j {
         if !paint_is_painting() {
             app.canvas.current_layer = 
