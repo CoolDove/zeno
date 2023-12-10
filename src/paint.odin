@@ -102,6 +102,18 @@ paint_draw :: proc(n:i32= -1) -> i32 {
 
     if n <= 0 do return 0
 
+    // Blend settings
+    rem_blend := dgl.state_get_blend_ex(); defer dgl.state_set_blend(rem_blend)
+    dgl.state_set_blend(dgl.GlStateBlendEx{
+        enable = true,
+        src_rgb = gl.ONE,
+        dst_rgb = gl.ZERO,
+        src_alpha = gl.ONE,
+        dst_alpha = gl.ZERO,
+        equation_rgb = gl.FUNC_ADD,
+        equation_alpha = gl.MAX,
+    })
+
     using _paint
     // Draw daps
     dgl.framebuffer_bind(paint_fbo); defer dgl.framebuffer_bind_default()
@@ -114,7 +126,6 @@ paint_draw :: proc(n:i32= -1) -> i32 {
     uniform := &_paint.uniforms_brush_shader_default
     for i in 0..<n {
         d := daps[_paint.current_dap]
-        // c := canvas
         using _paint
 
         using dgl
