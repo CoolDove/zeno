@@ -7,11 +7,11 @@ import "core:time"
 
 debug_draw_immediate_brush_buffers :: proc(canvas: ^Canvas) {
     // Debug
-    // immediate_texture(
-    //     {10, app.window_size.y - 210},
-    //     Vec2{150, 200}, 
-    //     {1,1,1,1}, 
-    //     canvas.texid)
+    immediate_texture(
+        {10, app.window_size.y - 210},
+        Vec2{150, 200}, 
+        {1,1,1,1}, 
+        canvas.compose.compose_brush)
     // immediate_texture(
     //     {10+150+10, app.window_size.y - 210},
     //     Vec2{150, 200}, 
@@ -63,6 +63,10 @@ debug_draw_vg_informations :: proc(vg : ^nvg.Context, canvas: ^Canvas) {
             _textline(vg, 15, &y, fmt.tprintf("{}: {}ms", p.name, time.duration_milliseconds(p.duration)))
         }
     }
+}
+
+debug_draw_vg_layers :: proc(vg : ^nvg.Context, canvas: ^Canvas, rect: Vec4) {
+    
 }
 
 debug_draw_color_preview_quad :: proc(pos, size: Vec2, color: Vec4) {

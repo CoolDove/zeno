@@ -215,8 +215,8 @@ draw :: proc(vg : ^nvg.Context) {
             {1,1,1,1},
             canvas.compose.compose_result)
         
+        debug_draw_immediate_brush_buffers(canvas)
         debug_draw_color_preview_quad({20, app.window_size.y-60}, {40,40}, app.brush_color)
-        // debug_draw_immediate_brush_buffers(canvas)
     }
     immediate_end()
     profile_end()

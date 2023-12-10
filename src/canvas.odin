@@ -4,10 +4,6 @@ import gl "vendor:OpenGL"
 import "dgl"
 
 Canvas :: struct {
-    // Data
-    // Some of this will be moved to layer data.
-    // texid : u32,
-
     width, height : i32,
 
     current_layer : i32,
@@ -22,9 +18,8 @@ Canvas :: struct {
     using coord : ^Coordinate,
 
     // Brush
-    buffer_left : u32,// Used during painting, composing.
-    buffer_right : u32,// Used during painting, composing.
-    buffer_back : u32,// Not used.
+    buffer_left : u32,// Used during composing.
+    buffer_right : u32,// Used during composing.
 }
 
 Layer :: struct {
@@ -45,7 +40,6 @@ canvas_init_with_file :: proc(canvas: ^Canvas, filename: string) -> bool {
 
     canvas.width = tex.size.x
     canvas.height = tex.size.y
-    // canvas.texid = tex.id
 
     canvas.scale = 1
     canvas.coord = &canvas_coord
@@ -63,7 +57,6 @@ canvas_init_with_color :: proc(canvas: ^Canvas, width,height: i32, color : Color
         for c in 0..<4 do data[cast(int)i*4+c] = color[c]
     }
     canvas.width, canvas.height = width, height
-    // canvas.texid = dgl.texture_create_with_color(cast(int)width, cast(int)height, color)
     
     canvas.scale = 1
     canvas.coord = &canvas_coord
@@ -77,32 +70,22 @@ canvas_init_with_color :: proc(canvas: ^Canvas, width,height: i32, color : Color
 
 @(private="file")
 _canvas_init_brush_texture :: proc(using canvas: ^Canvas) {
-    buffer_back = dgl.texture_create_empty(auto_cast canvas.width, auto_cast canvas.height)
     buffer_left = dgl.texture_create_empty(auto_cast canvas.width, auto_cast canvas.height)
     buffer_right = dgl.texture_create_empty(auto_cast canvas.width, auto_cast canvas.height)
 }
 
 canvas_release :: proc(using canvas: ^Canvas) {
     compose_engine_release_canvas(canvas)
-    // gl.DeleteTextures(1, &texid)
-    gl.DeleteTextures(1, &buffer_back)
     gl.DeleteTextures(1, &buffer_left)
     gl.DeleteTextures(1, &buffer_right)
     canvas^= {}
 }
 
 canvas_get_clean_buffers :: proc(using canvas: ^Canvas, color: Vec4) -> (u32, u32) {
-    dgl.blit_clear(buffer_left, color)
-    dgl.blit_clear(buffer_right, color)
+    dgl.blit_clear(buffer_left, color, width,height)
+    dgl.blit_clear(buffer_right, color, width,height)
     return buffer_left, buffer_right
 }
-
-// canvas_fetch_brush_texture :: proc(using canvas: ^Canvas) -> (u32, u32) {
-//     dgl.blit(texid, brush_tex_buffer, width, height)
-//     dgl.blit(texid, brush_tex_left, width, height)
-//     dgl.blit(texid, brush_tex_right, width, height)
-//     return brush_tex_left, brush_tex_right
-// }
 
 // Canvas layer controlling
 canvas_add_layer :: proc(using canvas: ^Canvas, layer : Layer) {

@@ -2,11 +2,8 @@ package dgl
 
 import gl "vendor:OpenGL"
 
-GlState :: union {
-    GlStateViewport,
-}
-
 GlStateViewport :: Vec4i
+GlStateBlend :: Vec4i
 
 state_get_viewport :: proc() -> GlStateViewport {
     vp : GlStateViewport

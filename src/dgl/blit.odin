@@ -48,9 +48,11 @@ blit_draw_unit_quad :: #force_inline proc(shader: ShaderId) {
     primitive_draw(&_blit_quad, shader)
 }
 
-blit_clear :: proc(texture: u32, color: Vec4) {
+blit_clear :: proc(texture: u32, color: Vec4, width, height: i32) {
     if !_blit_is_initialized() do _blit_init()
-    fbo := framebuffer_current(); defer framebuffer_bind(fbo)
+    rem_fbo := framebuffer_current(); defer framebuffer_bind(rem_fbo)
+    rem_viewport := state_get_viewport(); defer state_set_viewport(rem_viewport)
+    gl.Viewport(0,0,width,height)
     framebuffer_bind(_blit_fbo)
     framebuffer_attach_color(0, texture)
     gl.ClearColor(color.r, color.g, color.b, color.a)

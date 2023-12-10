@@ -16,7 +16,19 @@ Paint :: struct {
     daps : [dynamic]Dap,
     activate : bool,
 
-    brush_texture_left, brush_texture_right : u32,
+    brush_texture : u32,
+
+    // Cold
+    using engine : PaintEngine,
+}
+
+PaintEngine :: struct {
+    paint_fbo : dgl.FramebufferId,
+
+    brush_quad : dgl.DrawPrimitive,
+
+    brush_shader_default : dgl.ShaderId,
+    uniforms_brush_shader_default : BrushUniforms,
 }
 
 Dap :: struct {
@@ -27,8 +39,23 @@ Dap :: struct {
 
 paint_init :: proc() {
     _paint.daps = make_dynamic_array_len_cap([dynamic]Dap, 0, 1024)
+
+    _paint.paint_fbo = dgl.framebuffer_create()
+    _paint.brush_quad = dgl.primitive_make_quad_a({1,0,0,0.5})
+
+    { // Brush shader default
+        _paint.brush_shader_default = dgl.shader_load_from_sources(
+            #load("./shaders/brush.vert"), 
+            #load("./shaders/brush.frag"), true)
+        dgl.uniform_load(&_paint.uniforms_brush_shader_default, _paint.brush_shader_default)
+    }
 }
 paint_release :: proc() {
+    dgl.shader_destroy(_paint.brush_shader_default)
+
+    dgl.primitive_delete(&_paint.brush_quad)
+    
+    dgl.framebuffer_destroy(_paint.paint_fbo)
     delete(_paint.daps)
 }
 
@@ -39,11 +66,21 @@ paint_begin :: proc(canvas: ^Canvas, layer: ^Layer) {
     _paint.layer = layer
     using _paint
 
-    // brush_texture_left, brush_texture_right = canvas_fetch_brush_texture(canvas)
+    brush_texture = canvas.compose.compose_brush
+    dgl.blit_clear(brush_texture, {1,1,1,0}, canvas.width, canvas.height)
 }
 paint_end :: proc() {
     c := _paint.canvas 
-    // dgl.blit(c.brush_tex_buffer, c.texid, c.width, c.height)
+    w,h := c.width, c.height
+
+    // dgl.blit(c.compose.compose_brush, c.layers[c.current_layer].tex, c.width, c.height)
+    gl.Disable(gl.BLEND)
+    current_layer := &c.layers[c.current_layer]
+    dgl.blit_clear(c.buffer_left, {1,1,1,0}, w,h)
+    dgl.blit(current_layer.tex, c.buffer_left, w,h)
+    compose_pigment(c.compose.compose_brush, c.buffer_left, current_layer.tex, w,h)
+    dgl.blit_clear(c.compose.compose_brush, {1,1,1,0}, w,h)
+    gl.Enable(gl.BLEND)
 
     _paint.activate = false
     _paint.canvas = nil
@@ -57,19 +94,35 @@ paint_push_dap :: proc(dap: Dap) {
     append(&_paint.daps, dap)
 }
 
-// Draw n daps, and return how many daps remained, -1 means draw all daps.
+// Draw n daps, and return how many daps remained, n==-1 means draw all daps.
 paint_draw :: proc(n:i32= -1) -> i32 {
     remained := cast(i32)len(_paint.daps) - _paint.current_dap
     n := min(n, remained)// @Temporary: Draw all the daps
     if n == -1 do n = remained
 
+    if n <= 0 do return 0
+
+    using _paint
+    // Draw daps
+    dgl.framebuffer_bind(paint_fbo); defer dgl.framebuffer_bind_default()
+    dgl.framebuffer_attach_color(0, brush_texture); defer dgl.framebuffer_dettach_color(0)
+
+    rem_vp := dgl.state_get_viewport(); defer dgl.state_set_viewport(rem_vp)
+    gl.Viewport(0,0,canvas.width, canvas.height)
+
+    dgl.shader_bind(_paint.brush_shader_default)
+    uniform := &_paint.uniforms_brush_shader_default
     for i in 0..<n {
-        d := _paint.daps[_paint.current_dap]
-        c := _paint.canvas
+        d := daps[_paint.current_dap]
+        // c := canvas
         using _paint
-        // paint_dap_on_texture(c.brush_tex_buffer, brush_texture_left, {auto_cast c.width, auto_cast c.height}, d)
-        _paint.brush_texture_left, _paint.brush_texture_right = 
-            _paint.brush_texture_right, _paint.brush_texture_left 
+
+        using dgl
+        uniform_set(uniform.viewport_size, Vec2{auto_cast canvas.width, auto_cast canvas.height})
+        uniform_set(uniform.dap_info, Vec4{d.position.x, d.position.y, d.scale, d.angle})
+        uniform_set(uniform.brush_color, app.brush_color)
+
+        dgl.primitive_draw(&_paint.brush_quad, _paint.brush_shader_default)
         _paint.current_dap += 1
     }
     return paint_remained()
@@ -86,3 +139,15 @@ paint_is_painting :: proc() -> bool {
 paint_remained :: #force_inline proc() -> i32 {
     return cast(i32)len(_paint.daps) - _paint.current_dap
 }
+
+
+// Brush
+BrushUniforms :: struct {
+    viewport_size : dgl.UniformLocVec2,
+    dap_info : dgl.UniformLocVec4,
+    brush_color : dgl.UniformLocVec4,
+    // main_texture, mixbox_lut : dgl.UniformLocTexture,
+}
+
+@(private="file")
+_brush_uniforms : BrushUniforms
