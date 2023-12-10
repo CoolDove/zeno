@@ -214,8 +214,10 @@ draw :: proc(vg : ^nvg.Context) {
             Vec2{cw,ch},
             {1,1,1,1},
             canvas.compose.compose_result)
-        
         debug_draw_immediate_brush_buffers(canvas)
+
+        debug_draw_immediate_layers(vg, canvas, {app.window_size.x - 110, 10, 100, app.window_size.y})
+
         debug_draw_color_preview_quad({20, app.window_size.y-60}, {40,40}, app.brush_color)
     }
     immediate_end()
@@ -253,8 +255,18 @@ on_key :: proc(key : sdl.Keysym) {
         } else {
             color_switch(false)
         }
+    } else if key.sym == .n {
+        canvas_add_layer(&app.canvas, layer_create_with_color(&app.canvas, {255,255,255,0}))
+    } else if key.sym == .j {
+        if !paint_is_painting() {
+            app.canvas.current_layer = 
+                math.clamp(app.canvas.current_layer-1, 0, cast(i32)len(app.canvas.layers)-1)
+        }
     } else if key.sym == .k {
-        canvas_add_layer(&app.canvas, layer_create_with_color(&app.canvas, {255,255,60,120}))
+        if !paint_is_painting() {
+            app.canvas.current_layer = 
+                math.clamp(app.canvas.current_layer+1, 0, cast(i32)len(app.canvas.layers)-1)
+        }
     }
 }
 

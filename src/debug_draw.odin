@@ -29,6 +29,26 @@ debug_draw_immediate_brush_buffers :: proc(canvas: ^Canvas) {
     //     _paint.brush_texture_right)
 }
 
+debug_draw_immediate_layers :: proc(vg : ^nvg.Context, canvas: ^Canvas, rect: Vec4) {
+    cw,ch :f32= auto_cast canvas.width, auto_cast canvas.height
+    x,y := rect.x,rect.y
+    w,h := rect.z,rect.w
+
+    unit_h :f32= 60.0
+    preview_w :f32= unit_h
+    preview_h :f32= unit_h
+    if canvas.height > canvas.width do preview_w = (cw/ch) * preview_h
+    else do preview_h = (ch/cw) * preview_w
+
+    #reverse for l,idx in canvas.layers {
+        pdh :f32= 3 //padding half
+        is_current := idx == auto_cast canvas.current_layer
+        immediate_quad({ x-pdh, y-pdh }, { w+2*pdh, unit_h+2*pdh }, {1,1,1,1} if is_current else {.4,.4,.4,1})
+        immediate_texture({x,y}, {preview_w,preview_h}, {1,1,1,1}, l.tex)
+        y += unit_h + 8.0
+    }
+}
+
 debug_draw_vg_informations :: proc(vg : ^nvg.Context, canvas: ^Canvas) {
     _textline :: proc(vg: ^nvg.Context, x:f32, y: ^f32, msg: string) {
         nvg.FillColor(vg, {0,0,0,.8})
@@ -65,9 +85,6 @@ debug_draw_vg_informations :: proc(vg : ^nvg.Context, canvas: ^Canvas) {
     }
 }
 
-debug_draw_vg_layers :: proc(vg : ^nvg.Context, canvas: ^Canvas, rect: Vec4) {
-    
-}
 
 debug_draw_color_preview_quad :: proc(pos, size: Vec2, color: Vec4) {
     hs := 0.5 * size
