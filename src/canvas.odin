@@ -70,6 +70,7 @@ _canvas_init :: proc(canvas: ^Canvas, width,height: i32) {
 canvas_release :: proc(using canvas: ^Canvas) {
     history_release(&canvas.history)
     compose_engine_release_canvas(canvas)
+    for &l in layers do layer_destroy(&l)
     gl.DeleteTextures(1, &buffer_left)
     gl.DeleteTextures(1, &buffer_right)
     canvas^= {}
