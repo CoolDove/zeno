@@ -7,37 +7,54 @@ import gl "vendor:OpenGL"
 _blit_fbo : FramebufferId
 @(private="file")
 _blit_shader : ShaderId
-@(private="file")
-_SHADER_LOC_MAIN_TEXTURE : i32
+// @(private="file")
+// _SHADER_LOC_MAIN_TEXTURE : i32
 @(private="file")
 _blit_quad : DrawPrimitive
 
-CustomBlitter :: struct {
-    prepare : proc(shader : ShaderId, src, dst: u32, w,h: i32),
-    shader : ShaderId,
+DefaultBlitterUniforms :: struct {
+    src_rect : UniformLocVec4,
+    main_texture : UniformLocTexture,
 }
+@(private="file")
+_default_blitter_uniform : DefaultBlitterUniforms
 
 // If you want to set some custom uniforms, you should manually bind the shader
 //  you're going to use before this process. And remember texture slot 0 has 
 //  been used.
-blit_with_shader :: proc(shader : ShaderId, main_texture_loc : i32, src, dst: u32, w,h: i32) {
+// dst_rect and src_rect are in pixel coordinate. dst_rect is implemented by `gl.Viewport`, so the
+//  vertex shader can only consider transforming the blit quad into NDC.
+blit_pro :: proc(shader : ShaderId, main_texture_loc : i32, src, dst: TextureId, src_size : Vec2, src_rect, dst_rect : Vec4) {
     if !_blit_is_initialized() do _blit_init()
     rem_fbo := framebuffer_current(); defer framebuffer_bind(rem_fbo)
     rem_shader := shader_current(); defer shader_bind(rem_shader)
     rem_viewport := state_get_viewport(); defer state_set_viewport(rem_viewport)
+
     framebuffer_bind(_blit_fbo)
     framebuffer_attach_color(0, dst)
-
-    gl.Viewport(0,0, w,h)
+    gl.Viewport(auto_cast dst_rect.x, auto_cast dst_rect.y, auto_cast dst_rect.z, auto_cast dst_rect.w)
+    
     shader_bind(shader)
     gl.ActiveTexture(gl.TEXTURE0)
     gl.BindTexture(gl.TEXTURE_2D, src)
     gl.Uniform1i(main_texture_loc, 0)
 
+    src_rect := src_rect
+    src_rect.x /= src_size.x
+    src_rect.y /= src_size.y
+    src_rect.z /= src_size.x
+    src_rect.w /= src_size.y
+
+    uniform_set_vec4(_default_blitter_uniform.src_rect, src_rect)
+
     blit_draw_unit_quad(shader)
 }
-blit :: proc(src, dst: u32, w,h: i32) {// With default blit shader.
-    blit_with_shader(_blit_shader,_SHADER_LOC_MAIN_TEXTURE, src,dst, w,h)
+blit_ex :: proc(src, dst: TextureId, src_size : Vec2, src_rect, dst_rect : Vec4) {
+    blit_pro(_blit_shader, _default_blitter_uniform.main_texture, src,dst, src_size, src_rect,dst_rect)
+}
+blit :: proc(src, dst: TextureId, w,h: i32) {// With default blit shader.
+    w,h :f32= cast(f32)w, cast(f32)h
+    blit_pro(_blit_shader, _default_blitter_uniform.main_texture, src,dst, {w,h}, {0,0,w,h},{0,0,w,h})
 }
 blit_make_blit_shader :: proc(fragment_source : string) -> ShaderId {
     return shader_load_from_sources(_BLITTER_VERT, fragment_source)
@@ -66,7 +83,8 @@ _blit_is_initialized :: #force_inline proc() -> bool {
 @(private="file")
 _blit_init :: proc() {
     _blit_shader = blit_make_blit_shader(_BLITTER_FRAG)
-    _SHADER_LOC_MAIN_TEXTURE = gl.GetUniformLocation(_blit_shader, "main_texture")
+    uniform_load(&_default_blitter_uniform, _blit_shader)
+    // _SHADER_LOC_MAIN_TEXTURE = gl.GetUniformLocation(_blit_shader, "main_texture")
     _blit_quad = primitive_make_quad_a({1,1,1,1})
     _blit_fbo = framebuffer_create()
     append(&release_handler, proc() {
@@ -87,10 +105,14 @@ layout (location = 2) in vec2 uv;
 layout(location = 0) out vec2 _uv;
 layout(location = 1) out vec4 _color;
 
+uniform vec4 src_rect;
 
 void main()
 {
     vec2 p = vec2(position.x, position.y);
+
+    p = (p - vec2(src_rect.x, src_rect.y)) / vec2(src_rect.z, src_rect.w);
+    
     p = p * 2 - 1;
 
     gl_Position = vec4(p.x, p.y, 0, 1.0);

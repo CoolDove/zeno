@@ -1,6 +1,9 @@
 package main
 
+import "core:fmt"
 import gl "vendor:OpenGL"
+
+import "dgl"
 
 HistoryContext :: struct {
     canvas : ^Canvas,// Which canvas this context is bound to.
@@ -54,13 +57,28 @@ history_push :: proc(using history: ^HistoryContext, zmd : ZenoCommand) {
 
 // ZenoCommand initializers.
 zmd_modify_layer :: proc(layer: ^Layer, rect: Vec4) -> ZenoCommand {
-    return {}
+    x,y := rect.x,rect.y
+    w,h := rect.z,rect.w
+    buffer := dgl.texture_create_empty(cast(int)w,cast(int)h)
+
+    canvas := layer.canvas
+    cw,ch := cast(f32)canvas.width, cast(f32)canvas.height
+
+    dgl.blit_ex(layer.tex, buffer, Vec2{cw,ch}, rect, {0,0,w,h})
+
+    zmd : ZmdModifyLayer
+    zmd.layer = layer
+    zmd.texture = buffer
+    zmd.rect = rect
+
+    return zmd
 }
 
 @(private="file")
 _zmd_undo :: proc(zmd: ^ZenoCommand) {
     switch z in zmd {
     case ZmdModifyLayer:
+        dgl.blit_ex(z.texture, z.layer.tex, {z.rect.z,z.rect.w}, {0,0,z.rect.z,z.rect.w}, z.rect)
     }
 }
 @(private="file")
@@ -74,5 +92,6 @@ _zmd_release :: proc(zmd: ^ZenoCommand) {
     switch z in zmd {
     case ZmdModifyLayer:
         gl.DeleteTextures(1, &z.texture)
+        fmt.printf("undo buffer released\n")
     }
 }

@@ -20,6 +20,8 @@ Texture :: struct {
     id : u32, 
 }
 
+TextureId :: u32
+
 Color32 :: distinct [4]u8
 
 image_load :: proc (path: string) -> Image {

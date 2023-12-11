@@ -21,6 +21,7 @@ _compose_engine : ComposeEngine
 
 @(private="file")
 _PigmentComposeUniforms :: struct {
+    src_rect : dgl.UniformLocVec4,
     src_texture, dst_texture, mixbox_lut : dgl.UniformLocTexture,
 }
 @(private="file")
@@ -28,6 +29,7 @@ _pigment_compose_uniforms : _PigmentComposeUniforms
 
 @(private="file")
 _DefaultComposeUniforms :: struct {
+    src_rect : dgl.UniformLocVec4,
     src_texture, dst_texture : dgl.UniformLocTexture,
 }
 @(private="file")
@@ -102,6 +104,7 @@ compose_engine_compose_all :: proc(using canvas: ^Canvas) {
         framebuffer_attach_color(0, br)
         uniform_set_texture(_default_compose_uniforms.src_texture, l.tex if !is_current_layer else bs, 0)
         uniform_set_texture(_default_compose_uniforms.dst_texture, bl, 1)
+        uniform_set(_default_compose_uniforms.src_rect, Vec4{0,0,1,1})
         blit_draw_unit_quad(SHADER_COMPOSE_DEFAULT)
         bl, br = br, bl
     }
@@ -122,9 +125,11 @@ compose_pigment :: proc(src,dst, target: u32, width, height: i32) {
     gl.Viewport(0,0,width,height)
     shader_bind(SHADER_COMPOSE_PIGMENT)
 
-    uniform_set(_pigment_compose_uniforms.src_texture, src, 0)
-    uniform_set(_pigment_compose_uniforms.dst_texture, dst, 1)
-    uniform_set(_pigment_compose_uniforms.mixbox_lut, TEXTURE_MIXBOX_LUT, 2)
+    uniform := &_pigment_compose_uniforms
+    uniform_set(uniform.src_texture, src, 0)
+    uniform_set(uniform.dst_texture, dst, 1)
+    uniform_set(uniform.mixbox_lut, TEXTURE_MIXBOX_LUT, 2)
+    uniform_set(uniform.src_rect, Vec4{0,0,1,1})
     blit_draw_unit_quad(SHADER_COMPOSE_PIGMENT)
 }
 compose_default :: proc(src,dst, target: u32, width, height: i32) {
@@ -138,9 +143,9 @@ compose_default :: proc(src,dst, target: u32, width, height: i32) {
     gl.Viewport(0,0,width,height)
     shader_bind(SHADER_COMPOSE_DEFAULT)
     uniform := &_default_compose_uniforms
-
     uniform_set_texture(uniform.src_texture, src, 0)
     uniform_set_texture(uniform.dst_texture, dst, 1)
+    uniform_set(uniform.src_rect, Vec4{0,0,1,1})
     blit_draw_unit_quad(SHADER_COMPOSE_DEFAULT)
 }
 

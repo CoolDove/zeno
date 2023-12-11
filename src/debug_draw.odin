@@ -29,7 +29,7 @@ debug_draw_immediate_brush_buffers :: proc(canvas: ^Canvas) {
     //     _paint.brush_texture_right)
 }
 
-debug_draw_immediate_layers :: proc(vg : ^nvg.Context, canvas: ^Canvas, rect: Vec4) {
+debug_draw_immediate_layers :: proc(canvas: ^Canvas, rect: Vec4) {
     cw,ch :f32= auto_cast canvas.width, auto_cast canvas.height
     x,y := rect.x,rect.y
     w,h := rect.z,rect.w
@@ -46,6 +46,24 @@ debug_draw_immediate_layers :: proc(vg : ^nvg.Context, canvas: ^Canvas, rect: Ve
         immediate_quad({ x-pdh, y-pdh }, { w+2*pdh, unit_h+2*pdh }, {1,1,1,1} if is_current else {.4,.4,.4,1})
         immediate_texture({x,y}, {preview_w,preview_h}, {1,1,1,1}, l.tex)
         y += unit_h + 8.0
+    }
+}
+
+debug_draw_immediate_history_buffers :: proc(history: ^HistoryContext, anchor: Vec2) {
+    x :f32= anchor.x
+    y :f32= anchor.y
+    for b in history.undo {
+        unit :f32= 50.0
+        if z, ok := b.(ZmdModifyLayer); ok {
+            r := z.rect
+            w,h := r.z,r.w
+            h = h/w * unit
+            w = unit
+            immediate_quad({x-2,y - h - 5-2}, {w+4, h+4}, {0,1,1,1})
+            immediate_texture({x,y - h - 5}, {w, h}, {1,1,1,1}, z.texture)
+            x += unit + 5
+        } else {
+        }
     }
 }
 

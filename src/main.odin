@@ -92,7 +92,7 @@ main :: proc() {
                         // The paint
                         paintcurve_clear(&paintcurve)
                         paintcurve_append(&paintcurve, canvas->wnd2cvs(app.mouse_pos), 1.0)
-                        paint_begin(&canvas, nil)
+                        paint_begin(&canvas, &canvas.layers[canvas.current_layer])
 
                         nodelay_flag = true
                     }
@@ -217,7 +217,8 @@ draw :: proc(vg : ^nvg.Context) {
             canvas.compose.compose_result)
         debug_draw_immediate_brush_buffers(canvas)
 
-        debug_draw_immediate_layers(vg, canvas, {app.window_size.x - 110, 10, 100, app.window_size.y})
+        debug_draw_immediate_layers(canvas, {app.window_size.x - 110, 10, 100, app.window_size.y})
+        debug_draw_immediate_history_buffers(&canvas.history, {100, app.window_size.y})
 
         debug_draw_color_preview_quad({20, app.window_size.y-60}, {40,40}, app.brush_color)
     }
@@ -266,6 +267,10 @@ on_key :: proc(key : sdl.Keysym) {
         if !paint_is_painting() {
             app.canvas.current_layer = 
                 math.clamp(app.canvas.current_layer+1, 0, cast(i32)len(app.canvas.layers)-1)
+        }
+    } else if key.sym == .z {
+        if !paint_is_painting() {
+            history_undo(&app.canvas.history)
         }
     }
 }

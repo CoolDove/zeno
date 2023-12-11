@@ -26,6 +26,7 @@ Canvas :: struct {
 }
 
 Layer :: struct {
+    canvas: ^Canvas,
     tex : u32,
     opacity : f32,
     visible : bool,
@@ -88,6 +89,7 @@ canvas_get_clean_buffers :: proc(using canvas: ^Canvas, color: Vec4) -> (u32, u3
 // Canvas layer controlling
 canvas_add_layer :: proc(using canvas: ^Canvas, layer : Layer) {
     append(&layers, layer)
+    layers[len(layers)-1].canvas = canvas
 }
 
 // Layer impl

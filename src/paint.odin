@@ -78,9 +78,7 @@ paint_end :: proc() {
     c := _paint.canvas 
     w,h := c.width, c.height
 
-    // history_push(&_paint.canvas.history, zmd_modify_layer(
-    //     _paint.layer, 
-    // ))
+    history_push(&_paint.canvas.history, zmd_modify_layer(_paint.layer, _paint.dirty_rect))
 
     gl.Disable(gl.BLEND)
     current_layer := &c.layers[c.current_layer]
