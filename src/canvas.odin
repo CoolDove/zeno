@@ -19,10 +19,10 @@ Canvas :: struct {
     scale : f32,
     using coord : ^Coordinate,
 
-    // Brush
+    // Buffers, left & right & spike is just random-meaningless naming.
     buffer_left : u32,// Used during composing.
     buffer_right : u32,// Used during composing.
-
+    buffer_spike : u32,// Used during composing.
 }
 
 Layer :: struct {
@@ -62,6 +62,7 @@ _canvas_init :: proc(canvas: ^Canvas, width,height: i32) {
     w,h :int= auto_cast canvas.width, auto_cast canvas.height
     canvas.buffer_left = dgl.texture_create_empty(w,h)
     canvas.buffer_right = dgl.texture_create_empty(w,h)
+    canvas.buffer_spike = dgl.texture_create_empty(w,h)
     compose_engine_init_canvas(canvas)
     compose_engine_compose_all(canvas)
     history_init(&canvas.history, canvas)
@@ -73,13 +74,15 @@ canvas_release :: proc(using canvas: ^Canvas) {
     for &l in layers do layer_destroy(&l)
     gl.DeleteTextures(1, &buffer_left)
     gl.DeleteTextures(1, &buffer_right)
+    gl.DeleteTextures(1, &buffer_spike)
     canvas^= {}
 }
 
-canvas_get_clean_buffers :: proc(using canvas: ^Canvas, color: Vec4) -> (u32, u32) {
+canvas_get_clean_buffers :: proc(using canvas: ^Canvas, color: Vec4) -> (u32, u32, u32) {
     dgl.blit_clear(buffer_left, color, width,height)
     dgl.blit_clear(buffer_right, color, width,height)
-    return buffer_left, buffer_right
+    dgl.blit_clear(buffer_spike, color, width,height)
+    return buffer_left, buffer_right, buffer_spike
 }
 
 // Canvas layer controlling

@@ -92,18 +92,18 @@ compose_engine_compose_all :: proc(using canvas: ^Canvas) {
     framebuffer_bind(_compose_engine.fbo)
     gl.Viewport(0,0,width,height)
     shader_bind(SHADER_COMPOSE_DEFAULT)
-    bl, br := canvas_get_clean_buffers(canvas, {1,1,1,0})
+    bl, br, bs := canvas_get_clean_buffers(canvas, {1,1,1,0})
     for l, idx in canvas.layers {
+        is_current_layer := idx == auto_cast canvas.current_layer
+        if is_current_layer {
+            compose_pigment(canvas.compose.compose_brush, l.tex, bs, width, height)
+        }
+
         framebuffer_attach_color(0, br)
-        uniform_set_texture(_default_compose_uniforms.src_texture, l.tex, 0)
+        uniform_set_texture(_default_compose_uniforms.src_texture, l.tex if !is_current_layer else bs, 0)
         uniform_set_texture(_default_compose_uniforms.dst_texture, bl, 1)
         blit_draw_unit_quad(SHADER_COMPOSE_DEFAULT)
-
         bl, br = br, bl
-        if idx == auto_cast canvas.current_layer {
-            compose_pigment(canvas.compose.compose_brush, bl, br, width, height)
-            bl, br = br, bl
-        }
     }
     blit(bl, canvas.compose.compose_result, width, height)
 }
