@@ -264,9 +264,10 @@ on_key :: proc(key : sdl.Keysym) {
         if !paint_is_painting() {
             history_undo(&app.canvas.history)
         }
-    } else {
-        control_state_machine_input(key)
+    } else if key.sym == .y {
+        history_redo(&app.canvas.history)
     }
+    control_state_machine_input(key)
 }
 
 color_switch :: proc(alpha: bool) {

@@ -78,13 +78,24 @@ zmd_modify_layer :: proc(layer: ^Layer, rect: Vec4) -> ZenoCommand {
 _zmd_undo :: proc(zmd: ^ZenoCommand) {
     switch z in zmd {
     case ZmdModifyLayer:
+        buffer := dgl.texture_create_empty(cast(int)z.rect.z, cast(int)z.rect.w)
+        c := z.layer.canvas
+        dgl.blit_ex(z.layer.tex, buffer, {cast(f32)c.width, cast(f32)c.height}, z.rect, {0,0, z.rect.z, z.rect.w})
         dgl.blit_ex(z.texture, z.layer.tex, {z.rect.z,z.rect.w}, {0,0,z.rect.z,z.rect.w}, z.rect)
+        gl.DeleteTextures(1, &z.texture)
+        z.texture = buffer
     }
 }
 @(private="file")
 _zmd_redo :: proc(zmd: ^ZenoCommand) {
     switch z in zmd {
     case ZmdModifyLayer:
+        buffer := dgl.texture_create_empty(cast(int)z.rect.z, cast(int)z.rect.w)
+        c := z.layer.canvas
+        dgl.blit_ex(z.layer.tex, buffer, {cast(f32)c.width, cast(f32)c.height}, z.rect, {0,0, z.rect.z, z.rect.w})
+        dgl.blit_ex(z.texture, z.layer.tex, {z.rect.z,z.rect.w}, {0,0,z.rect.z,z.rect.w}, z.rect)
+        gl.DeleteTextures(1, &z.texture)
+        z.texture = buffer
     }
 }
 @(private="file")
@@ -92,6 +103,5 @@ _zmd_release :: proc(zmd: ^ZenoCommand) {
     switch z in zmd {
     case ZmdModifyLayer:
         gl.DeleteTextures(1, &z.texture)
-        // fmt.printf("undo buffer released\n")
     }
 }
