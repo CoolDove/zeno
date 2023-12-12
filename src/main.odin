@@ -184,9 +184,8 @@ draw :: proc(vg : ^nvg.Context) {
     canvas := &app.canvas
     w, h := app.window_size.x,app.window_size.y
 
-    
     profile_begin("Compose")
-    compose_engine_compose_all(canvas)
+    compose_engine_compose_all(canvas)// TODO: Dirty update
     profile_end()
 
     profile_begin("DrawCanvas")
@@ -200,25 +199,15 @@ draw :: proc(vg : ^nvg.Context) {
             pos+{5,5},
             Vec2{cw, ch}, 
             {0.1,0.1,0.1,0.9})
-        // if paint_is_painting() do immediate_texture(
-        //     pos,
-        //     Vec2{cw, ch}, 
-        //     {1,1,1,1}, 
-        //     canvas.brush_tex_buffer)
-        // else do immediate_texture(
-        //     pos,
-        //     Vec2{cw, ch}, 
-        //     {1,1,1,1}, 
-        //     canvas.texid)
         immediate_texture(
             pos,
             Vec2{cw,ch},
             {1,1,1,1},
             canvas.compose.compose_result)
-        debug_draw_immediate_brush_buffers(canvas)
+        if app.debug_config.brush_buffer do  debug_draw_immediate_brush_buffers(canvas)
 
         debug_draw_immediate_layers(canvas, {app.window_size.x - 110, 10, 100, app.window_size.y})
-        debug_draw_immediate_history_buffers(&canvas.history, {100, app.window_size.y})
+        if app.debug_config.paint_history > 0 do debug_draw_immediate_history_buffers(&canvas.history, {100, app.window_size.y}, app.debug_config.paint_history)
 
         debug_draw_color_preview_quad({20, app.window_size.y-60}, {40,40}, app.brush_color)
     }
@@ -228,11 +217,14 @@ draw :: proc(vg : ^nvg.Context) {
     nvg.BeginFrame(vg, auto_cast w,auto_cast h, 1.0)
     nvg.Save(vg)
 
+
     draw_nvg_cursor(vg)
 
-    debug_draw_vg_dirty_rect(vg, {1,0,0,1})
+    if app.debug_config.dirty_region do debug_draw_vg_dirty_rect(vg, {1,0,0,1})
 
-    debug_draw_vg_informations(vg, canvas)
+    if app.debug_config.basic_info do debug_draw_vg_informations(vg, canvas)
+
+    control_vg_draw_commands(vg, {app.window_size.x-300,50})
     
     nvg.Restore(vg)
     nvg.EndFrame(vg)
@@ -272,6 +264,8 @@ on_key :: proc(key : sdl.Keysym) {
         if !paint_is_painting() {
             history_undo(&app.canvas.history)
         }
+    } else {
+        control_state_machine_input(key)
     }
 }
 

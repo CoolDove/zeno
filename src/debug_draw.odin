@@ -49,11 +49,13 @@ debug_draw_immediate_layers :: proc(canvas: ^Canvas, rect: Vec4) {
     }
 }
 
-debug_draw_immediate_history_buffers :: proc(history: ^HistoryContext, anchor: Vec2) {
+debug_draw_immediate_history_buffers :: proc(history: ^HistoryContext, anchor: Vec2, count: i32) {
     x :f32= anchor.x
     y :f32= anchor.y
-    for b in history.undo {
+    c :i32= cast(i32)len(history.undo)
+    for idx in max(c-count, 0)..<c {
         unit :f32= 50.0
+        b := history.undo[idx]
         if z, ok := b.(ZmdModifyLayer); ok {
             r := z.rect
             w,h := r.z,r.w
@@ -130,13 +132,6 @@ debug_draw_vg_dirty_rect :: proc(vg: ^nvg.Context, color: Vec4) {
     c := _paint.canvas
 
     _debug_draw_canvas_rect(vg, c, r.x,r.y, r.z,r.w, color)
-    // color :Vec4= {1,0,0,1}
-    // x,y := r.x,r.y
-    // w,h := r.z,r.w
-    // point_on_canvas(vg, c, {x,y}, 5, color)
-    // point_on_canvas(vg, c, {x+w,y}, 5, color)
-    // point_on_canvas(vg, c, {x,y+h}, 5, color)
-    // point_on_canvas(vg, c, {x+w,y+h}, 5, color)
 }
 
 point_on_canvas :: proc(vg: ^nvg.Context, c: ^Canvas, pos: Vec2, r: f32, color: Vec4) {

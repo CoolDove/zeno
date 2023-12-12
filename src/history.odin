@@ -92,6 +92,6 @@ _zmd_release :: proc(zmd: ^ZenoCommand) {
     switch z in zmd {
     case ZmdModifyLayer:
         gl.DeleteTextures(1, &z.texture)
-        fmt.printf("undo buffer released\n")
+        // fmt.printf("undo buffer released\n")
     }
 }

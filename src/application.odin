@@ -20,6 +20,8 @@ Application :: struct {
     brush_size : i32,
     brush_color : Vec4,
     paintcurve : PaintCurve,
+
+    debug_config : DebugConfig,
 }
 
 ApplicationBase :: struct {
@@ -136,4 +138,13 @@ _app_update_mouse_position :: proc() {
     x,y : c.int
     sdl.GetMouseState(&x,&y)
     app.mouse_pos = Vec2{auto_cast x,auto_cast y}
+}
+
+
+
+// #Debug Config
+
+DebugConfig :: struct {
+    dirty_region, basic_info, brush_buffer : bool,
+    paint_history : i32,
 }
