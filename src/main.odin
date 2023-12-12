@@ -272,6 +272,8 @@ on_key :: proc(key : sdl.Keysym) {
         if !paint_is_painting() {
             history_undo(&app.canvas.history)
         }
+    } else if key.sym == .y {
+        history_redo(&app.canvas.history)
     }
 }
 
