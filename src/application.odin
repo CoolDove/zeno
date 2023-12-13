@@ -51,7 +51,7 @@ application_init :: proc(app : ^Application) {
 
     sdl.GL_SetSwapInterval(1)
     sdl.GL_MakeCurrent(app_base.wnd, app_base.gl_ctx)
-    gl.load_up_to(3, 3, sdl.gl_set_proc_address)
+    gl.load_up_to(4, 3, sdl.gl_set_proc_address)
 
     dgl.init()
 

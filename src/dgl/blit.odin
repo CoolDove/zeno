@@ -94,6 +94,14 @@ _blit_init :: proc() {
     })
 }
 
+// Copy texture
+texture_copy :: proc(from,to: TextureId, from_pos, to_pos: Vec2i, width,height: i32) {
+    gl.CopyImageSubData(from, gl.TEXTURE_2D, 0, from_pos.x, from_pos.y, 0,
+                        to,   gl.TEXTURE_2D, 0, to_pos.x, to_pos.y, 0,
+                        width, height, 1)
+}
+
+
 @(private="file")
 _BLITTER_VERT :string: `
 #version 440 core

@@ -72,7 +72,7 @@ compose_engine_release :: proc() {
 
 compose_engine_init_canvas :: proc(using canvas: ^Canvas) {
     using compose, dgl
-    w, h :int= auto_cast width, auto_cast height
+    w, h :i32= auto_cast width, auto_cast height
     compose_result = texture_create_empty(w, h)
     compose_above = texture_create_empty(w, h)
     compose_below = texture_create_empty(w, h)

@@ -17,7 +17,7 @@ Image :: struct {
 
 Texture :: struct {
     size : Vec2i,
-    id : u32, 
+    id : TextureId, 
 }
 
 TextureId :: u32
@@ -102,7 +102,7 @@ texture_create :: proc {
     texture_create_with_buffer,
 }
 
-texture_create_empty :: proc(width, height : int) -> u32 {
+texture_create_empty :: proc(width, height : i32) -> TextureId {
     tex : u32
     gl.GenTextures(1, &tex)
     gl.BindTexture(gl.TEXTURE_2D, tex)
@@ -113,10 +113,10 @@ texture_create_empty :: proc(width, height : int) -> u32 {
     gl.TexParameteri(target, gl.TEXTURE_MIN_FILTER, gl.NEAREST)
     gl.TexParameteri(target, gl.TEXTURE_MAG_FILTER, gl.NEAREST)
 
-    gl.TexImage2D(target, 0, gl.RGBA, cast(i32)width, cast(i32)height, 0, gl.RGBA, gl.UNSIGNED_BYTE, nil)
+    gl.TexImage2D(target, 0, gl.RGBA, width, height, 0, gl.RGBA, gl.UNSIGNED_BYTE, nil)
     return tex
 }
-texture_create_with_color :: proc(width, height : int, color : [4]u8, gen_mipmap := false) -> u32 {
+texture_create_with_color :: proc(width, height : int, color : [4]u8, gen_mipmap := false) -> TextureId {
     tex : u32
     gl.GenTextures(1, &tex)
     gl.BindTexture(gl.TEXTURE_2D, tex)
@@ -137,7 +137,7 @@ texture_create_with_color :: proc(width, height : int, color : [4]u8, gen_mipmap
     return tex
 }
 
-texture_create_with_buffer :: proc(width, height : int, buffer : []u8, gen_mipmap := false) -> u32 {
+texture_create_with_buffer :: proc(width, height : int, buffer : []u8, gen_mipmap := false) -> TextureId {
     tex : u32
     gl.GenTextures(1, &tex)
     gl.BindTexture(gl.TEXTURE_2D, tex)

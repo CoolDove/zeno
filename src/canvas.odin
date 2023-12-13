@@ -60,7 +60,7 @@ _canvas_init :: proc(canvas: ^Canvas, width,height: i32) {
     canvas.height = height
     canvas.scale = 1
     canvas.coord = &canvas_coord
-    w,h :int= auto_cast canvas.width, auto_cast canvas.height
+    w,h :i32= auto_cast canvas.width, auto_cast canvas.height
     canvas.buffer_left = dgl.texture_create_empty(w,h)
     canvas.buffer_right = dgl.texture_create_empty(w,h)
     canvas.buffer_spike = dgl.texture_create_empty(w,h)
