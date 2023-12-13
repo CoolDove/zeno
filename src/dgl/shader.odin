@@ -104,12 +104,7 @@ shader_create_from_components :: proc(comps: ..^ShaderComponent) -> ShaderId {
 }
 
 shader_bind :: proc(shader: ShaderId) {
-    shader := shader
-    if cast(u32)shader == 0 {
-        log.error("DGL Error: Failed to bind shader, the shader is not correctly initialized!")
-    } else {
-        gl.UseProgram(auto_cast shader)
-    }
+    gl.UseProgram(shader)
 }
 
 shader_current :: proc() -> ShaderId {

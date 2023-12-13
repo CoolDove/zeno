@@ -10,6 +10,7 @@ import "core:c"
 import "core:math"
 import "core:math/linalg"
 import "core:fmt"
+import "core:log"
 import "core:time"
 
 import "dgl"
@@ -28,6 +29,8 @@ timer : time.Stopwatch
 app : Application
 
 main :: proc() {
+    context.logger = log.create_console_logger(); defer log.destroy_console_logger(context.logger)
+
     application_init(&app)
     defer application_release(&app)
     using app
@@ -36,6 +39,7 @@ main :: proc() {
     defer nvg.DeleteImage(vg, pic)
 
     // canvas_init(&app.canvas, 20,20, Color32{200, 80, 10, 255})
+
     canvas_init(&app.canvas, "./p1113.png")
     defer canvas_release(&app.canvas)
 
