@@ -2,6 +2,7 @@ package main
 
 import "core:math/linalg"
 import "core:math"
+import "core:log"
 import "core:fmt"
 import gl "vendor:OpenGL"
 import "dgl"
@@ -75,17 +76,25 @@ paint_begin :: proc(canvas: ^Canvas, layer: ^Layer) {
     dgl.blit_clear(brush_texture, {1,1,1,0}, canvas.width, canvas.height)
 }
 paint_end :: proc() {
-    c := _paint.canvas 
-    w,h := c.width, c.height
+    if len(_paint.daps) == 0 {
+        log.warn("Paint: No daps painted, invalid paint.")
+    } else {
+        c := _paint.canvas 
+        w,h := c.width, c.height
 
-    history_push(&_paint.canvas.history, zmd_modify_layer(_paint.layer, _paint.dirty_rect))
+        r := _paint.dirty_rect
+        r.x = math.max(0, r.x)
+        r.y = math.max(0, r.y)
+        r.z = math.min(r.z, cast(f32)w-r.x)
+        r.w = math.min(r.w, cast(f32)h-r.y)
+        history_push(&_paint.canvas.history, zmd_modify_layer(_paint.layer, r))
 
-    gl.Disable(gl.BLEND)
-    current_layer := &c.layers[c.current_layer]
-    dgl.blit(current_layer.tex, c.buffer_left, w,h)
-    compose_pigment(c.compose.compose_brush, c.buffer_left, current_layer.tex, w,h)
-    dgl.blit_clear(c.compose.compose_brush, {1,1,1,0}, w,h)
-    gl.Enable(gl.BLEND)
+        gl.Disable(gl.BLEND); defer gl.Enable(gl.BLEND)
+        current_layer := &c.layers[c.current_layer]
+        dgl.blit(current_layer.tex, c.buffer_left, w,h)
+        compose_pigment(c.compose.compose_brush, c.buffer_left, current_layer.tex, w,h)
+        dgl.blit_clear(c.compose.compose_brush, {1,1,1,0}, w,h)
+    }
 
     _paint.activate = false
     _paint.canvas = nil
