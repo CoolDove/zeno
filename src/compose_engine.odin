@@ -80,7 +80,7 @@ compose_engine_init_canvas :: proc(using canvas: ^Canvas) {
 }
 compose_engine_release_canvas :: proc(using canvas: ^Canvas) {
     using compose, dgl
-    if compose_result != 0 do gl.DeleteTextures(3, &compose_result)
+    if compose_result != 0 do gl.DeleteTextures(4, &compose_result)
     compose = {}
 }
 
