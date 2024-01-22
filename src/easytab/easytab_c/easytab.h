@@ -838,11 +838,8 @@ EasyTabResult EasyTab_Load_Ex(HWND Window,
         LogContext.lcMoveMask = PACKETDATA;
         LogContext.lcBtnUpMask = LogContext.lcBtnDnMask;
 
-		HDC hdcScreen = GetDC(NULL);
-		int screenWidth = GetDeviceCaps(hdcScreen, DESKTOPHORZRES);
-		int screenHeight = GetDeviceCaps(hdcScreen, DESKTOPVERTRES);
-		
-		ReleaseDC(NULL, hdcScreen);
+		int screenWidth = GetSystemMetrics(SM_CXSCREEN);
+		int screenHeight = GetSystemMetrics(SM_CYSCREEN);
 
         LogContext.lcOutOrgX = 0;
         LogContext.lcOutOrgY = 0;

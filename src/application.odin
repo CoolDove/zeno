@@ -52,13 +52,19 @@ application_init :: proc(app : ^Application) {
 
 
 	{// Initialize tablet
+		// IMPORTANT!!!
 		win32.SetProcessDpiAwarenessContext(win32.DPI_AWARENESS_CONTEXT_SYSTEM_AWARE)
+
 		wm_info : ^sdl.SysWMinfo = &app_base.sys_wm_info
 		sdl.GetWindowWMInfo(app_base.wnd, wm_info)
 		assert(wm_info.subsystem == .WINDOWS, "Platform not support")
 		sdl.SetWindowsMessageHook(native_wnd_msg_handler, nil)
 		init_result := easytab.Load(transmute(win32.HWND)wm_info.info.win.window)
-		log.debugf("Init easytab: {}", init_result)
+		if init_result == .Ok {
+			log.debugf("EasyTab initialized.")
+		} else {
+			log.errorf("Failed to Initialize EasyTab: {}", init_result)
+		}
 	}
 
     app_base.gl_ctx = sdl.GL_CreateContext(app_base.wnd)
