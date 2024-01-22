@@ -41,7 +41,7 @@ EasyTabInfo :: struct {
 
     // Context : win32.HCTX,
 
-	// Dove: I just don't use.
+	// Dove: not used
     // WTINFOA           WTInfoA,
     // WTOPENA           WTOpenA,
     // WTGETA            WTGetA,

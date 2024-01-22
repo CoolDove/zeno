@@ -4,6 +4,9 @@ import sdl "vendor:sdl2"
 import nvg "vendor:nanovg"
 import "core:fmt"
 import "core:time"
+import win32 "core:sys/windows"
+
+import "easytab"
 
 debug_draw_immediate_brush_buffers :: proc(canvas: ^Canvas) {
     // Debug
@@ -113,6 +116,16 @@ debug_draw_vg_informations :: proc(vg : ^nvg.Context, canvas: ^Canvas) {
         sdl.GetMouseState(&mouse_cvs.x, &mouse_cvs.y)
         _textline(vg, 10, &y, fmt.tprintf("wnd: {}", vec_i2f(mouse_cvs)))
         _textline(vg, 10, &y, fmt.tprintf("cvs: {}", canvas->wnd2cvs(vec_i2f(mouse_cvs))))
+		
+		{
+			using easytab.EasyTab
+			y += 10
+			_textline(vg, 5, &y, "pen:")
+			_textline(vg, 10, &y, fmt.tprintf("position: {}", Vec2i{ PosX, PosY }))
+			_textline(vg, 10, &y, fmt.tprintf("pressure: {}", Pressure))
+		}
+
+
         profile_end()
 
         profiles := profile_collect()

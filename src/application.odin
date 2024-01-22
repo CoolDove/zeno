@@ -52,6 +52,7 @@ application_init :: proc(app : ^Application) {
 
 
 	{// Initialize tablet
+		win32.SetProcessDpiAwarenessContext(win32.DPI_AWARENESS_CONTEXT_SYSTEM_AWARE)
 		wm_info : ^sdl.SysWMinfo = &app_base.sys_wm_info
 		sdl.GetWindowWMInfo(app_base.wnd, wm_info)
 		assert(wm_info.subsystem == .WINDOWS, "Platform not support")

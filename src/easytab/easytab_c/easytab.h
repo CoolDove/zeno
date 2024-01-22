@@ -838,15 +838,21 @@ EasyTabResult EasyTab_Load_Ex(HWND Window,
         LogContext.lcMoveMask = PACKETDATA;
         LogContext.lcBtnUpMask = LogContext.lcBtnDnMask;
 
+		HDC hdcScreen = GetDC(NULL);
+		int screenWidth = GetDeviceCaps(hdcScreen, DESKTOPHORZRES);
+		int screenHeight = GetDeviceCaps(hdcScreen, DESKTOPVERTRES);
+		
+		ReleaseDC(NULL, hdcScreen);
+
         LogContext.lcOutOrgX = 0;
         LogContext.lcOutOrgY = 0;
-        LogContext.lcOutExtX = GetSystemMetrics(SM_CXSCREEN);
-        LogContext.lcOutExtY = -GetSystemMetrics(SM_CYSCREEN);
+        LogContext.lcOutExtX = screenWidth;
+        LogContext.lcOutExtY = -screenHeight;
 
         LogContext.lcSysOrgX = 0;
         LogContext.lcSysOrgY = 0;
-        LogContext.lcSysExtX = GetSystemMetrics(SM_CXSCREEN);
-        LogContext.lcSysExtY = GetSystemMetrics(SM_CYSCREEN);
+        LogContext.lcSysExtX = screenWidth;
+        LogContext.lcSysExtY = screenHeight;
 
         if (TrackingMode == EASYTAB_TRACKING_MODE_RELATIVE)
         {
@@ -917,6 +923,7 @@ EasyTabResult EasyTab_HandleEvent(HWND Window, UINT Message, LPARAM LParam, WPAR
         Point.x = Packet.pkX;
         Point.y = Packet.pkY;
         ScreenToClient(Window, &Point);
+
         EasyTab->PosX = Point.x;
         EasyTab->PosY = Point.y;
 
