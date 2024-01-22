@@ -167,7 +167,10 @@ void main() {
     vec4 src = texture(src_texture, _uv);
     vec4 dst = texture(dst_texture, _uv);
     float outa = src.a + dst.a * (1 - src.a);
-    FragColor = mixbox_lerp(dst, src, src.a);
+    // FragColor = mixbox_lerp(dst, src, src.a);
+    if (dst.a == 0) FragColor = src;
+    else FragColor = mixbox_lerp(dst, src, src.a);
+    // FragColor = mix(src, FragColor, dst.a);
     FragColor.a = outa;
 }
 `

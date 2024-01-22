@@ -7,12 +7,15 @@ import sdl "vendor:sdl2"
 import gl "vendor:OpenGL"
 import "core:strings"
 import "core:c"
+import "core:c/libc"
 import "core:math"
 import "core:math/linalg"
 import "core:fmt"
 import "core:log"
 import "core:time"
+import win32 "core:sys/windows"
 
+import "easytab"
 import "dgl"
 
 Record :: struct {
@@ -175,6 +178,19 @@ main :: proc() {
         profile_clear()
     }
 }
+
+native_wnd_msg_handler :: proc "c" (userdata: rawptr, hWnd: rawptr, message: c.uint, wParam: u64, lParam: i64) {
+	lp :int= auto_cast lParam
+	result := easytab.HandleEvent(
+		transmute(win32.HWND)app.sys_wm_info.info.win.window,
+		message,
+		transmute(win32.LPARAM)lParam,
+		transmute(win32.WPARAM)wParam)
+	if result == .Ok {
+		redraw_flag = true
+	}
+}
+
 
 update :: proc(delta: f32) {
     if tweener_count(&app.tweener) > 0 {

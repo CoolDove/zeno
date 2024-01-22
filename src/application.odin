@@ -2,6 +2,7 @@ package main
 
 import "core:time"
 import "core:fmt"
+import "core:log"
 import "core:c"
 import "core:slice"
 import win32 "core:sys/windows"
@@ -11,13 +12,14 @@ import sdl "vendor:sdl2"
 import gl "vendor:OpenGL"
 import nvggl "vendor:nanovg/gl"
 
+import "easytab"
 import "dgl"
 
 Application :: struct {
     using app_base : ApplicationBase,
     tweener : Tweener,
     canvas : Canvas,
-    brush_size : i32,
+	brush_size : i32,
     brush_color : Vec4,
     paintcurve : PaintCurve,
 
@@ -25,12 +27,13 @@ Application :: struct {
 }
 
 ApplicationBase :: struct {
-    vg : ^nvg.Context,
+	vg : ^nvg.Context,
     wnd : ^sdl.Window,
+	sys_wm_info : sdl.SysWMinfo,
 
     // This should have be Vec2i, but to reduce the cost of type casting.
     window_size : Vec2,
-    mouse_pos : Vec2,
+	mouse_pos : Vec2,
 
     frame_id : u64,
     timer : time.Stopwatch,// Frame timer
@@ -40,11 +43,22 @@ ApplicationBase :: struct {
 
 application_init :: proc(app : ^Application) {
     sdl.Init(sdl.INIT_VIDEO)
-    sdl.GL_SetAttribute(.CONTEXT_MAJOR_VERSION, 3);
-    sdl.GL_SetAttribute(.CONTEXT_MINOR_VERSION, 3);
-    sdl.GL_SetAttribute(.CONTEXT_PROFILE_MASK, auto_cast sdl.GLprofile.COMPATIBILITY);
+    sdl.GL_SetAttribute(.CONTEXT_MAJOR_VERSION, 3)
+    sdl.GL_SetAttribute(.CONTEXT_MINOR_VERSION, 3)
+    sdl.GL_SetAttribute(.CONTEXT_PROFILE_MASK, auto_cast sdl.GLprofile.COMPATIBILITY)
+
     app_base : ApplicationBase
     app_base.wnd = sdl.CreateWindow("zeno", sdl.WINDOWPOS_CENTERED, sdl.WINDOWPOS_CENTERED, 800,600, sdl.WindowFlags{.RESIZABLE, .OPENGL})
+
+
+	{// Initialize tablet
+		wm_info : ^sdl.SysWMinfo = &app_base.sys_wm_info
+		sdl.GetWindowWMInfo(app_base.wnd, wm_info)
+		assert(wm_info.subsystem == .WINDOWS, "Platform not support")
+		sdl.SetWindowsMessageHook(native_wnd_msg_handler, nil)
+		init_result := easytab.Load(transmute(win32.HWND)wm_info.info.win.window)
+		log.debugf("Init easytab: {}", init_result)
+	}
 
     app_base.gl_ctx = sdl.GL_CreateContext(app_base.wnd)
     assert(app_base.gl_ctx != nil, fmt.tprintf("Failed to create GLContext for window, because: {}.\n", sdl.GetError()))
@@ -99,6 +113,9 @@ application_release :: proc(app : ^Application) {
 
     dgl.release()
     _cursors_release()
+	
+	easytab.Unload()
+
     sdl.DestroyWindow(app.wnd)
     sdl.Quit()
 }
