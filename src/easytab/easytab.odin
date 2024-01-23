@@ -7,7 +7,7 @@ foreign import user32 "system:User32.lib"
 foreign import etb "./easytab_c/easytab_msvc.lib"
 
 
-Buttons :: enum {
+Buttons :: enum c.int32_t {
     PenTouch = 1 << 0, // Pen is touching tablet
     PenLower = 1 << 1, // Lower pen button is pressed
     PenUpper = 1 << 2, // Upper pen button is pressed

@@ -12,6 +12,7 @@ import "core:math"
 import "core:math/linalg"
 import "core:fmt"
 import "core:log"
+import "core:runtime"
 import "core:time"
 import win32 "core:sys/windows"
 
@@ -57,6 +58,11 @@ main :: proc() {
         @static adjusting_brush_size_pin : Vec2
 
         if sdl.PollEvent(&event) {
+			// FIXME: Handling tablet check is not correct.
+			handling_easytab := app.tablet_info.dirty || auto_cast (app.tablet_info.eztab.Buttons & auto_cast easytab.Buttons.PenTouch)// If true, overlap PointerInputEvent Primary and Motion.
+			app.tablet_info.dirty = false
+			app.tablet_info.tablet_working = true // handling_easytab && app.pointer_input.pressure > 0
+
             #partial switch event.type {
             case .QUIT: 
                 quit=true
@@ -89,52 +95,63 @@ main :: proc() {
             case .MOUSEBUTTONDOWN:
                 _app_update_mouse_position()
                 if event.button.button == sdl.BUTTON_MIDDLE {
-                    dragging = true
-                    cursor_set(.Dragger)
-                } else if event.button.button == sdl.BUTTON_LEFT {
-                    if sdl.KeymodFlag.LSHIFT in sdl.GetModState() {
-                        adjusting_brush_size = true
-                        adjusting_brush_size_pin = app.mouse_pos
-                    } else {
-                        // The paint
-                        paintcurve_clear(&paintcurve)
-                        paintcurve_append(&paintcurve, canvas->wnd2cvs(app.mouse_pos), 1.0)
-                        paint_begin(&canvas, &canvas.layers[canvas.current_layer])
+					pointer_event(&pointer_input, PointerInputEventButton{.Middle, true})
+                    // dragging = true
+                    // cursor_set(.Dragger)
+                } else if event.button.button == sdl.BUTTON_RIGHT {
+					pointer_event(&pointer_input, PointerInputEventButton{.Right, true})
+				} else if !handling_easytab && event.button.button == sdl.BUTTON_LEFT {
+					pointer_event(&pointer_input, PointerInputEventPrimary{app.mouse_pos, 1.0, true})
 
-                        nodelay_flag = true
-                    }
+                    // if sdl.KeymodFlag.LSHIFT in sdl.GetModState() {
+                        // adjusting_brush_size = true
+                        // adjusting_brush_size_pin = app.mouse_pos
+                    // } else {
+                        // // The paint
+						// pointer_down(app.mouse_pos, 1.0)
+						// nodelay_flag = true
+                    // }
                 }
             case .MOUSEBUTTONUP:
                 _app_update_mouse_position()
                 if event.button.button == sdl.BUTTON_MIDDLE {
-                    dragging = false
-                    cursor_set(.Default)
-                } else if event.button.button == sdl.BUTTON_LEFT {
-                    if adjusting_brush_size {
-                        adjusting_brush_size = false
-                    } else if paint_is_painting() {
-                        paintcurve_append(&paintcurve, canvas->wnd2cvs(app.mouse_pos), 1.0)
-                        paint_end()
-                    }
+					pointer_event(&pointer_input, PointerInputEventButton{.Middle, false})
+                    // dragging = false
+                    // cursor_set(.Default)
+                } else if event.button.button == sdl.BUTTON_RIGHT {
+					pointer_event(&pointer_input, PointerInputEventButton{.Right, false})
+				} else if !handling_easytab && event.button.button == sdl.BUTTON_LEFT {
+					pointer_event(&pointer_input, PointerInputEventPrimary{app.mouse_pos, 0.0, false})
+                    // if adjusting_brush_size {
+                        // adjusting_brush_size = false
+                    // } else if paint_is_painting() {
+						// pointer_up(app.mouse_pos, 1.0)
+                    // }
                 }
             case .MOUSEMOTION:
                 _app_update_mouse_position()
-                if dragging {
-                    relative :Vec2i= {event.motion.xrel, event.motion.yrel}
-                    app.canvas.offset += vec_i2f(relative)
-                } else if adjusting_brush_size {
-                    app.brush_size = auto_cast math.max(1, linalg.distance(app.mouse_pos, adjusting_brush_size_pin)/canvas.scale)
-                } else if paint_is_painting() {
-                    points := app.paintcurve.raw_points
-                    last := points[len(points)-1]
-                    paintcurve_append(&app.paintcurve, canvas->wnd2cvs(app.mouse_pos), 1.0)
-                    length := paintcurve_length(&app.paintcurve)
-                    for paintcurve_step(&app.paintcurve, 0.1 * cast(f32)app.brush_size) {
-                        p,_ := paintcurve_get(&app.paintcurve)
-                        paint_push_dap({p.position, p.angle, p.pressure * auto_cast app.brush_size})
-                    }
-                    nodelay_flag = true
-                }
+				if !handling_easytab {
+					sdl_mouse_state := sdl.GetMouseState(nil, nil)
+					mouse_left_pressing :bool= auto_cast (sdl_mouse_state & transmute(u32)sdl.BUTTON(sdl.BUTTON_LEFT))
+					pointer_event(&pointer_input, PointerInputEventMotion{app.mouse_pos, 1.0 if mouse_left_pressing else 0.0})
+
+					app.tablet_info.tablet_working = false
+					// if dragging {
+						// relative :Vec2i= {event.motion.xrel, event.motion.yrel}
+						// app.canvas.offset += vec_i2f(relative)
+					// } else if adjusting_brush_size {
+						// app.brush_size = auto_cast math.max(1, linalg.distance(app.mouse_pos, adjusting_brush_size_pin)/canvas.scale)
+					// } else if paint_is_painting() {
+						// pointer_update(app.mouse_pos, 1.0)
+// 
+						// length := paintcurve_length(&app.paintcurve)
+						// for paintcurve_step(&app.paintcurve, 0.1 * cast(f32)app.brush_size) {
+							// p,_ := paintcurve_get(&app.paintcurve)
+							// paint_push_dap({p.position, p.angle, p.pressure * auto_cast app.brush_size})
+						// }
+						// nodelay_flag = true
+					// }
+				}
                 redraw_flag = true
             }
         }
@@ -179,15 +196,46 @@ main :: proc() {
     }
 }
 
+// event_handling_easytab :: proc() {
+	// using app.tablet_info
+	// old := eztab_info_old
+	// now := eztab^
+	// if now.PosX != old.PosX || now.PosY != old.PosY {// Moved
+		// pointer_
+	// }
+// }
+
 native_wnd_msg_handler :: proc "c" (userdata: rawptr, hWnd: rawptr, message: c.uint, wParam: u64, lParam: i64) {
-	lp :int= auto_cast lParam
+	context = runtime.default_context()
+
+	before := easytab.EasyTab^
 	result := easytab.HandleEvent(
-		transmute(win32.HWND)app.sys_wm_info.info.win.window,
-		message,
+		transmute(win32.HWND)app.sys_wm_info.info.win.window, message,
 		transmute(win32.LPARAM)lParam,
 		transmute(win32.WPARAM)wParam)
 	if result == .Ok {
+		using easytab.EasyTab
 		redraw_flag = true
+		
+		// ## Handling easytab
+		using app
+
+		touch_old :bool= auto_cast (before.Buttons & transmute(i32)easytab.Buttons.PenTouch)
+		touch_now :bool= auto_cast (Buttons & transmute(i32)easytab.Buttons.PenTouch)
+
+		if !touch_old && touch_now {
+			pointer_event(&pointer_input, PointerInputEventPrimary{vec_i2f(Vec2i{PosX,PosY}), Pressure, true})
+		} else if !touch_now && touch_old {
+			pointer_event(&pointer_input, PointerInputEventPrimary{vec_i2f(Vec2i{PosX,PosY}), Pressure, false})
+		}
+
+		if before.Pressure != Pressure || before.PosX != PosX || before.PosY != PosY {
+			pointer_event(&pointer_input, PointerInputEventMotion{vec_i2f(Vec2i{PosX,PosY}), Pressure})
+		}
+
+		app.tablet_info.dirty = true
+		app.tablet_info.eztab = before
+		app.tablet_info.eztab = easytab.EasyTab^
 	}
 }
 

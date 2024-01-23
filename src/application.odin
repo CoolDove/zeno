@@ -18,22 +18,35 @@ import "dgl"
 Application :: struct {
     using app_base : ApplicationBase,
     tweener : Tweener,
+
     canvas : Canvas,
-	brush_size : i32,
+
+    brush_size : i32,
     brush_color : Vec4,
-    paintcurve : PaintCurve,
+
+    paintcurve : PaintCurve, // Receive sampled position and get a curve to push daps.
+
+	pointer_input : PointerInput, // Unify tablet and mouse input.
+
+    tablet_info : TabletInfo,
 
     debug_config : DebugConfig,
 }
 
+TabletInfo :: struct {
+	eztab : easytab.EasyTabInfo,// Old eztab info.
+	tablet_working : bool,
+    dirty : bool,
+}
+
 ApplicationBase :: struct {
-	vg : ^nvg.Context,
+    vg : ^nvg.Context,
     wnd : ^sdl.Window,
-	sys_wm_info : sdl.SysWMinfo,
+    sys_wm_info : sdl.SysWMinfo,
 
     // This should have be Vec2i, but to reduce the cost of type casting.
     window_size : Vec2,
-	mouse_pos : Vec2,
+    mouse_pos : Vec2,
 
     frame_id : u64,
     timer : time.Stopwatch,// Frame timer
@@ -51,21 +64,21 @@ application_init :: proc(app : ^Application) {
     app_base.wnd = sdl.CreateWindow("zeno", sdl.WINDOWPOS_CENTERED, sdl.WINDOWPOS_CENTERED, 800,600, sdl.WindowFlags{.RESIZABLE, .OPENGL})
 
 
-	{// Initialize tablet
-		// IMPORTANT!!!
-		win32.SetProcessDpiAwarenessContext(win32.DPI_AWARENESS_CONTEXT_SYSTEM_AWARE)
+    {// Initialize tablet
+        // IMPORTANT!!!
+        win32.SetProcessDpiAwarenessContext(win32.DPI_AWARENESS_CONTEXT_SYSTEM_AWARE)
 
-		wm_info : ^sdl.SysWMinfo = &app_base.sys_wm_info
-		sdl.GetWindowWMInfo(app_base.wnd, wm_info)
-		assert(wm_info.subsystem == .WINDOWS, "Platform not support")
-		sdl.SetWindowsMessageHook(native_wnd_msg_handler, nil)
-		init_result := easytab.Load(transmute(win32.HWND)wm_info.info.win.window)
-		if init_result == .Ok {
-			log.debugf("EasyTab initialized.")
-		} else {
-			log.errorf("Failed to Initialize EasyTab: {}", init_result)
-		}
-	}
+        wm_info : ^sdl.SysWMinfo = &app_base.sys_wm_info
+        sdl.GetWindowWMInfo(app_base.wnd, wm_info)
+        assert(wm_info.subsystem == .WINDOWS, "Platform not support")
+        sdl.SetWindowsMessageHook(native_wnd_msg_handler, nil)
+        init_result := easytab.Load(transmute(win32.HWND)wm_info.info.win.window)
+        if init_result == .Ok {
+            log.debugf("EasyTab initialized.")
+        } else {
+            log.errorf("Failed to Initialize EasyTab: {}", init_result)
+        }
+    }
 
     app_base.gl_ctx = sdl.GL_CreateContext(app_base.wnd)
     assert(app_base.gl_ctx != nil, fmt.tprintf("Failed to create GLContext for window, because: {}.\n", sdl.GetError()))
@@ -84,6 +97,7 @@ application_init :: proc(app : ^Application) {
 
     // 
     app.app_base = app_base
+	app.tablet_info.eztab = easytab.EasyTab^
 
     tween_system_init()
     tweener_init(&app.tweener, 4)
@@ -120,8 +134,8 @@ application_release :: proc(app : ^Application) {
 
     dgl.release()
     _cursors_release()
-	
-	easytab.Unload()
+    
+    easytab.Unload()
 
     sdl.DestroyWindow(app.wnd)
     sdl.Quit()

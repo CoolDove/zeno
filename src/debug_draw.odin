@@ -118,13 +118,12 @@ debug_draw_vg_informations :: proc(vg : ^nvg.Context, canvas: ^Canvas) {
         _textline(vg, 10, &y, fmt.tprintf("cvs: {}", canvas->wnd2cvs(vec_i2f(mouse_cvs))))
 		
 		{
-			using easytab.EasyTab
 			y += 10
-			_textline(vg, 5, &y, "pen:")
-			_textline(vg, 10, &y, fmt.tprintf("position: {}", Vec2i{ PosX, PosY }))
-			_textline(vg, 10, &y, fmt.tprintf("pressure: {}", Pressure))
+			_textline(vg, 5, &y, "pointer:")
+			_textline(vg, 10, &y, fmt.tprintf("position: {}", app.pointer_input.position))
+			_textline(vg, 10, &y, fmt.tprintf("pressure: {}", app.pointer_input.pressure))
+			_textline(vg, 10, &y, fmt.tprintf("tablet working: {}", app.tablet_info.tablet_working))
 		}
-
 
         profile_end()
 
