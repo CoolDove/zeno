@@ -121,7 +121,7 @@ main :: proc() {
                 } else if event.button.button == sdl.BUTTON_RIGHT {
 					pointer_event(&pointer_input, PointerInputEventButton{.Right, false})
 				} else if !handling_easytab && event.button.button == sdl.BUTTON_LEFT {
-					pointer_event(&pointer_input, PointerInputEventPrimary{app.mouse_pos, 0.0, false})
+					pointer_event(&pointer_input, PointerInputEventPrimary{app.mouse_pos, 1.0, false})
                     // if adjusting_brush_size {
                         // adjusting_brush_size = false
                     // } else if paint_is_painting() {

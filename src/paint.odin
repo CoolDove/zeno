@@ -108,7 +108,7 @@ paint_push_dap :: proc(dap: Dap) {
     append(&_paint.daps, dap)
 
     r := &_paint.dirty_rect
-    u := dap.scale * 2.4
+    u := dap.scale * 2.4 + 4
     min := dap.position - 0.5*{u,u}
     max := min + {u,u}
     if r.z == 0 {
