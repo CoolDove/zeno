@@ -30,39 +30,39 @@ Result :: enum {
 }
 
 when ODIN_OS == .Windows {
-EasyTabInfo :: struct {
-    PosX, PosY: c.int32_t,
-    Pressure : c.float, // Range: 0.0f to 1.0f
-    Buttons : c.int32_t, // Bit field. Use with the EasyTab_Buttons_ enum.
-    RangeX, RangeY : c.int32_t,
-    MaxPressure : c.int32_t,
+	EasyTabInfo :: struct {
+		PosX, PosY: c.int32_t,
+		Pressure : c.float, // Range: 0.0f to 1.0f
+		Buttons : c.int32_t, // Bit field. Use with the EasyTab_Buttons_ enum.
+		RangeX, RangeY : c.int32_t,
+		MaxPressure : c.int32_t,
 
-    Dll : win32.HINSTANCE ,
+		Dll : win32.HINSTANCE ,
 
-    // Context : win32.HCTX,
+		// Dove: not used
 
-	// Dove: not used
-    // WTINFOA           WTInfoA,
-    // WTOPENA           WTOpenA,
-    // WTGETA            WTGetA,
-    // WTSETA            WTSetA,
-    // WTCLOSE           WTClose,
-    // WTPACKET          WTPacket,
-    // WTENABLE          WTEnable,
-    // WTOVERLAP         WTOverlap,
-    // WTSAVE            WTSave,
-    // WTCONFIG          WTConfig,
-    // WTRESTORE         WTRestore,
-    // WTEXTSET          WTExtSet,
-    // WTEXTGET          WTExtGet,
-    // WTQUEUESIZESET    WTQueueSizeSet,
-    // WTDATAPEEK        WTDataPeek,
-    // WTPACKETSGET      WTPacketsGet,
-    // WTMGROPEN         WTMgrOpen,
-    // WTMGRCLOSE        WTMgrClose,
-    // WTMGRDEFCONTEXT   WTMgrDefContext,
-    // WTMGRDEFCONTEXTEX WTMgrDefContextEx,
-}
+		// HCTX         	 Context,
+		// WTINFOA           WTInfoA,
+		// WTOPENA           WTOpenA,
+		// WTGETA            WTGetA,
+		// WTSETA            WTSetA,
+		// WTCLOSE           WTClose,
+		// WTPACKET          WTPacket,
+		// WTENABLE          WTEnable,
+		// WTOVERLAP         WTOverlap,
+		// WTSAVE            WTSave,
+		// WTCONFIG          WTConfig,
+		// WTRESTORE         WTRestore,
+		// WTEXTSET          WTExtSet,
+		// WTEXTGET          WTExtGet,
+		// WTQUEUESIZESET    WTQueueSizeSet,
+		// WTDATAPEEK        WTDataPeek,
+		// WTPACKETSGET      WTPacketsGet,
+		// WTMGROPEN         WTMgrOpen,
+		// WTMGRCLOSE        WTMgrClose,
+		// WTMGRDEFCONTEXT   WTMgrDefContext,
+		// WTMGRDEFCONTEXTEX WTMgrDefContextEx,
+	}
 
 	@(default_calling_convention = "c")
 	@(link_prefix = "EasyTab_")
