@@ -24,6 +24,9 @@ Application :: struct {
     brush_size : i32,
     brush_color : Vec4,
 
+	tool : ^ZenoTool,
+	tools : [dynamic]^ZenoTool,
+
     paintcurve : PaintCurve, // Receive sampled position and get a curve to push daps.
 
 	pointer_input : PointerInput, // Unify tablet and mouse input.
@@ -126,6 +129,11 @@ application_release :: proc(app : ^Application) {
     paint_release()
     paintcurve_release(&app.paintcurve)
 
+	for t in app.tools {
+		t->release()
+	}
+	delete(app.tools)
+
     /* Base */
     tweener_release(&app.tweener)
     profile_release()
@@ -140,6 +148,10 @@ application_release :: proc(app : ^Application) {
     sdl.DestroyWindow(app.wnd)
     sdl.Quit()
 }
+
+
+
+
 
 CursorType :: enum {
     Default, Brush, Dragger,
@@ -177,8 +189,6 @@ _app_update_mouse_position :: proc() {
     sdl.GetMouseState(&x,&y)
     app.mouse_pos = Vec2{auto_cast x,auto_cast y}
 }
-
-
 
 // #Debug Config
 

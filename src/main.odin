@@ -39,6 +39,10 @@ main :: proc() {
     defer application_release(&app)
     using app
 
+	// Register tools
+	register_tool(&tool_brush)
+	select_tool(&tool_brush)
+
     pic := nvg.CreateImage(vg, "./p1113.png", nvg.ImageFlags{.REPEAT_X, .REPEAT_Y})
     defer nvg.DeleteImage(vg, pic)
 
@@ -95,13 +99,13 @@ main :: proc() {
             case .MOUSEBUTTONDOWN:
                 _app_update_mouse_position()
                 if event.button.button == sdl.BUTTON_MIDDLE {
-					pointer_event(&pointer_input, PointerInputEventButton{.Middle, true})
+					post_pointer_event(&pointer_input, PointerInputEventButton{.Middle, true})
                     // dragging = true
                     // cursor_set(.Dragger)
                 } else if event.button.button == sdl.BUTTON_RIGHT {
-					pointer_event(&pointer_input, PointerInputEventButton{.Right, true})
+					post_pointer_event(&pointer_input, PointerInputEventButton{.Right, true})
 				} else if !handling_easytab && event.button.button == sdl.BUTTON_LEFT {
-					pointer_event(&pointer_input, PointerInputEventPrimary{app.mouse_pos, 1.0, true})
+					post_pointer_event(&pointer_input, PointerInputEventPrimary{app.mouse_pos, 1.0, true})
 
                     // if sdl.KeymodFlag.LSHIFT in sdl.GetModState() {
                         // adjusting_brush_size = true
@@ -115,13 +119,13 @@ main :: proc() {
             case .MOUSEBUTTONUP:
                 _app_update_mouse_position()
                 if event.button.button == sdl.BUTTON_MIDDLE {
-					pointer_event(&pointer_input, PointerInputEventButton{.Middle, false})
+					post_pointer_event(&pointer_input, PointerInputEventButton{.Middle, false})
                     // dragging = false
                     // cursor_set(.Default)
                 } else if event.button.button == sdl.BUTTON_RIGHT {
-					pointer_event(&pointer_input, PointerInputEventButton{.Right, false})
+					post_pointer_event(&pointer_input, PointerInputEventButton{.Right, false})
 				} else if !handling_easytab && event.button.button == sdl.BUTTON_LEFT {
-					pointer_event(&pointer_input, PointerInputEventPrimary{app.mouse_pos, 1.0, false})
+					post_pointer_event(&pointer_input, PointerInputEventPrimary{app.mouse_pos, 1.0, false})
                     // if adjusting_brush_size {
                         // adjusting_brush_size = false
                     // } else if paint_is_painting() {
@@ -133,7 +137,7 @@ main :: proc() {
 				if !handling_easytab {
 					sdl_mouse_state := sdl.GetMouseState(nil, nil)
 					mouse_left_pressing :bool= auto_cast (sdl_mouse_state & transmute(u32)sdl.BUTTON(sdl.BUTTON_LEFT))
-					pointer_event(&pointer_input, PointerInputEventMotion{app.mouse_pos, 1.0 if mouse_left_pressing else 0.0})
+					post_pointer_event(&pointer_input, PointerInputEventMotion{app.mouse_pos, 1.0 if mouse_left_pressing else 0.0})
 
 					app.tablet_info.tablet_working = false
 					// if dragging {
@@ -224,13 +228,13 @@ native_wnd_msg_handler :: proc "c" (userdata: rawptr, hWnd: rawptr, message: c.u
 		touch_now :bool= auto_cast (Buttons & transmute(i32)easytab.Buttons.PenTouch)
 
 		if !touch_old && touch_now {
-			pointer_event(&pointer_input, PointerInputEventPrimary{vec_i2f(Vec2i{PosX,PosY}), Pressure, true})
+			post_pointer_event(&pointer_input, PointerInputEventPrimary{vec_i2f(Vec2i{PosX,PosY}), Pressure, true})
 		} else if !touch_now && touch_old {
-			pointer_event(&pointer_input, PointerInputEventPrimary{vec_i2f(Vec2i{PosX,PosY}), Pressure, false})
+			post_pointer_event(&pointer_input, PointerInputEventPrimary{vec_i2f(Vec2i{PosX,PosY}), Pressure, false})
 		}
 
 		if before.Pressure != Pressure || before.PosX != PosX || before.PosY != PosY {
-			pointer_event(&pointer_input, PointerInputEventMotion{vec_i2f(Vec2i{PosX,PosY}), Pressure})
+			post_pointer_event(&pointer_input, PointerInputEventMotion{vec_i2f(Vec2i{PosX,PosY}), Pressure})
 		}
 
 		app.tablet_info.dirty = true
