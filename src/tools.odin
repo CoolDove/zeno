@@ -3,8 +3,9 @@ package main
 import "core:log"
 
 ZenoTool :: struct {
-	data : rawptr,
 	using vtable : ZenoTool_VTable,
+	name : string,
+	data : rawptr,
 }
 
 // `init` is called when this tool is registered to the application.
@@ -38,6 +39,7 @@ select_tool :: proc(tool: ^ZenoTool) {
 	if tool != nil {
 		app.tool = tool
 		post_tool_event(ZenoToolEventStateChange.Enter)
+		log.debugf("Select tool: {}", tool.name)
 	}
 }
 

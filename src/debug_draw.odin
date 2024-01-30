@@ -111,6 +111,8 @@ debug_draw_vg_informations :: proc(vg : ^nvg.Context, canvas: ^Canvas) {
         _textline(vg, 10, &y, fmt.tprintf("scale: {}", app.canvas.scale))
         _textline(vg, 10, &y, fmt.tprintf("offset: {}", canvas.offset))
         y += 10
+        _textline(vg, 5, &y, fmt.tprintf("tool: {}", app.tool.name))
+        y += 10
         _textline(vg, 5, &y, "mouse:")
         mouse_cvs : Vec2i
         sdl.GetMouseState(&mouse_cvs.x, &mouse_cvs.y)

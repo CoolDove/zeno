@@ -1,5 +1,9 @@
 package main
 
+
+import "core:runtime"
+import "core:log"
+
 import gl "vendor:OpenGL"
 import "dgl"
 
@@ -10,12 +14,18 @@ Canvas :: struct {
     layers : [dynamic]Layer,
 
     compose : CanvasComposeData,
+	_compose_dirty : bool,
     dirty_region : Vec4,// x,y(left-top) w,h
 
     history: HistoryContext,
 
+	// buffer
+	_image_buffer : []u8,
+	_image_buffer_dirty : bool,
+
     // Camera
     offset : Vec2,
+
     scale : f32,
     using coord : ^Coordinate,
 
@@ -67,9 +77,13 @@ _canvas_init :: proc(canvas: ^Canvas, width,height: i32) {
     compose_engine_init_canvas(canvas)
     compose_engine_compose_all(canvas)
     history_init(&canvas.history, canvas)
+
+	canvas._image_buffer = make([]u8, width*height*4)
+	canvas_image_buffer_mark_dirty(canvas)
 }
 
 canvas_release :: proc(using canvas: ^Canvas) {
+	delete(_image_buffer)
     history_release(&canvas.history)
     compose_engine_release_canvas(canvas)
     for &l in layers do layer_destroy(&l)
@@ -79,6 +93,42 @@ canvas_release :: proc(using canvas: ^Canvas) {
     canvas^= {}
 }
 
+canvas_get_image_buffer_to :: proc(using canvas: ^Canvas, data: rawptr) {
+	size := cast(int)(width * height * 4)
+	gl.BindTexture(gl.TEXTURE_2D, compose.compose_result)
+	gl.GetTexImage(gl.TEXTURE_2D, 0, gl.RGBA, gl.UNSIGNED_BYTE, data)
+}
+canvas_get_image_buffer :: proc(using canvas: ^Canvas) -> []u8 {
+	if _image_buffer_dirty {
+		size := cast(int)(width * height * 4)
+		if len(_image_buffer) == size {
+			delete(_image_buffer)
+			_image_buffer = make([]u8, size)
+		}
+		gl.BindTexture(gl.TEXTURE_2D, compose.compose_result)
+		gl.GetTexImage(gl.TEXTURE_2D, 0, gl.RGBA, gl.UNSIGNED_BYTE, raw_data(_image_buffer))
+		ptr := cast(^runtime.Raw_Slice)&_image_buffer
+		ptr.len = size
+
+		_image_buffer_dirty = false
+	}
+	return _image_buffer
+}
+canvas_image_buffer_mark_dirty :: proc(using canvas: ^Canvas) {
+	_image_buffer_dirty = true
+}
+
+canvas_compose_all :: proc(using canvas: ^Canvas) {
+	if _compose_dirty {
+		compose_engine_compose_all(canvas)
+		_compose_dirty = false
+	}
+}
+canvas_compose_mark_dirty :: proc(using canvas: ^Canvas) {
+	_compose_dirty = true
+}
+
+// These buffers are used in compose engine.
 canvas_get_clean_buffers :: proc(using canvas: ^Canvas, color: Vec4) -> (u32, u32, u32) {
     dgl.blit_clear(buffer_left, color, width,height)
     dgl.blit_clear(buffer_right, color, width,height)

@@ -109,9 +109,7 @@ compose_engine_compose_all :: proc(using canvas: ^Canvas) {
         bl, br = br, bl
     }
     blit(bl, canvas.compose.compose_result, width, height)
-}
-
-compose_engine_compose_dirty :: proc(using canvas: ^Canvas) {
+	canvas_image_buffer_mark_dirty(canvas)
 }
 
 compose_pigment :: proc(src,dst, target: u32, width, height: i32) {

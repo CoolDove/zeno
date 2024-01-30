@@ -4,6 +4,7 @@ import "core:log"
 
 
 tool_brush := ZenoTool{
+	name = "Brush",
 	vtable = ZenoTool_VTable {_brush_init, _brush_release, _brush_handler},
 }
 
@@ -40,11 +41,6 @@ _brush_handler :: proc(tool: ^ZenoTool, event: ZenoToolEvent) {
 			}
 		}
 	case ZenoToolEventStateChange:
-		if e == .Enter {
-			log.debugf("Select tool: brush")
-		} else if e == .Exit {
-			log.debugf("Deselect tool: brush")
-		}
 	}
 }
 @(private="file")

@@ -66,7 +66,7 @@ vec_f2i_4 :: #force_inline proc "contextless" (input: linalg.Vector4f32, method:
 }
 
 
-color_u2f :: proc(color : [4]u8) -> [4]f32 {
+color_u2f :: proc(color : Color32) -> Vec4 {
     return {cast(f32)color.x/255.0, cast(f32)color.y/255.0, cast(f32)color.z/255.0, cast(f32)color.w/255.0}
 }
 

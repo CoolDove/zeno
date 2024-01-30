@@ -39,9 +39,15 @@ main :: proc() {
     defer application_release(&app)
     using app
 
+	// Debug info default
+	app.debug_config.basic_info = true
+
+
 	// Register tools
 	register_tool(&tool_brush)
-	select_tool(&tool_brush)
+	register_tool(&tool_color_picker)
+
+	select_tool(&tool_color_picker)
 
     pic := nvg.CreateImage(vg, "./p1113.png", nvg.ImageFlags{.REPEAT_X, .REPEAT_Y})
     defer nvg.DeleteImage(vg, pic)
@@ -166,6 +172,7 @@ main :: proc() {
             /* Flush painting daps */
             profile_begin("Paint")
             paint_draw(-1)
+			canvas_compose_mark_dirty(&canvas)
             profile_end()
             
             dgl.framebuffer_bind_default()
@@ -199,15 +206,6 @@ main :: proc() {
         profile_clear()
     }
 }
-
-// event_handling_easytab :: proc() {
-	// using app.tablet_info
-	// old := eztab_info_old
-	// now := eztab^
-	// if now.PosX != old.PosX || now.PosY != old.PosY {// Moved
-		// pointer_
-	// }
-// }
 
 native_wnd_msg_handler :: proc "c" (userdata: rawptr, hWnd: rawptr, message: c.uint, wParam: u64, lParam: i64) {
 	context = runtime.default_context()
@@ -257,7 +255,7 @@ draw :: proc(vg : ^nvg.Context) {
     w, h := app.window_size.x,app.window_size.y
 
     profile_begin("Compose")
-    compose_engine_compose_all(canvas)// TODO: Dirty update
+    canvas_compose_all(canvas)
     profile_end()
 
     profile_begin("DrawCanvas")
@@ -338,7 +336,11 @@ on_key :: proc(key : sdl.Keysym) {
         }
     } else if key.sym == .y {
         history_redo(&app.canvas.history)
-    }
+    } else if key.sym == .b {
+		select_tool(&tool_brush)
+	} else if key.sym == .s {
+		select_tool(&tool_color_picker)
+	}
     control_state_machine_input(key)
 }
 

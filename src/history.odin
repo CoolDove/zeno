@@ -86,6 +86,7 @@ _zmd_undo :: proc(zmd: ^ZenoCommand) {
         dgl.texture_copy(z.texture, z.layer.tex, {0,0}, Vec2i{x,y}, w,h)
         gl.DeleteTextures(1, &z.texture)
         z.texture = buffer
+		canvas_compose_mark_dirty(c)
     }
 }
 @(private="file")
@@ -100,6 +101,7 @@ _zmd_redo :: proc(zmd: ^ZenoCommand) {
         dgl.texture_copy(z.texture, z.layer.tex, {0,0}, Vec2i{x,y}, w,h)
         gl.DeleteTextures(1, &z.texture)
         z.texture = buffer
+		canvas_compose_mark_dirty(c)
     }
 }
 @(private="file")
